@@ -4,8 +4,8 @@ fast_load.R
 Data/*
 !Data/TLS_scaled_DTM_and_grid_C13_Panama.rds
 !Data/TLS_scaled_DTM_and_grid_R11_Panama.rds
-!Data/Data_Kasper/Table_CNR1_2023.dat
-!Data/Data_Kasper/TMS_macro_2023_C13_and_R11.rds
+!Data/Table_CNR1_2023.dat
+!Data/TMS_macro_2023_C13_and_R11.rds
 Output/*
 !Output/2023-04-26_14/
 

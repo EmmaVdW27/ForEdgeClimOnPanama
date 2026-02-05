@@ -5,8 +5,8 @@
 create_input_drivers <- function() {
 
   # input files
-  temp_input_file_rds <<- readRDS("Data/Data_Kasper/TMS_macro_2023_C13_and_R11.rds")
-  rad_input_file_csv <<- "Data/Data_Kasper/Table_CNR1_2023.dat"
+  temp_input_file_rds <<- readRDS("Data/TMS_macro_2023_C13_and_R11.rds")
+  rad_input_file_csv <<- "Data/Table_CNR1_2023.dat"
 
   # plot parameters
   req_height <<- 1
