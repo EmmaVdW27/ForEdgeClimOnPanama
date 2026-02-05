@@ -46,7 +46,7 @@ if(plotnr == "C13"){
   structure_PAI_scaling_factor = 1
 }else{
   height_canopy = 35
-  structure_PAI_scaling_factor = 1
+  structure_PAI_scaling_factor = 6.20/6.22
 }
 
 
