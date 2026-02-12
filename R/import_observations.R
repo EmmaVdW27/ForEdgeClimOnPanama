@@ -38,8 +38,12 @@ import_temp_observations <- function(datetime){
       value_mean = mean(value, na.rm = TRUE),
       .groups = "drop"
     )
+  # add sensor locations uit sensor_locations file
+  air_temp_obs <- air_temp_obs %>%
+    left_join(sensor_locations %>% select(SN, x, y), by = "SN")
+
   # save dataframe as CSV
-  write.csv(air_temp_obs, paste0("Data/microtemp_air_obs_", format(datetime, "%Y%m%d_%H"), ".csv"), row.names = FALSE)
+  write.csv(air_temp_obs, paste0("Data/microtemp_air_obs_", format(datetime, "%Y%m%d_%H"), "_", plotnr, ".csv"), row.names = FALSE)
 }
 
 #' Function to import radiative observations (direct and diffuse shortwave and longwave radiation)

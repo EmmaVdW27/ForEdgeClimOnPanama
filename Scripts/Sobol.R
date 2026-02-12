@@ -59,18 +59,18 @@ output_path <- "Output/sensitivity_analysis/"
 # Parameter ranges
 param_ranges <- data.frame(
   parameter = c(
-    "betad", "beta0", "omega", "Kd_v", "Kb_v", "omega_g_v", "Kd_h", "Kb_h", "omega_g_h",
-    "e_forest", "beta_lw", "omega_lw", "Kd_lw_v", "omega_g_lw_v", "Kd_lw_h", "omega_g_lw_h",
+    "betad", "beta0", "omega", "Kd_v", "Kb_v", "omega_g_v",
+    "e_forest", "beta_lw", "omega_lw", "Kd_lw_v", "omega_g_lw_v",
     "h", "g_macro", "infl_macro", "infl_soil", "infl_forest", "g_forest", "p_ground", "g_soil", "k_soil"
   ),
   min = c(
-    0.3, 0.2, 0.43, 0.6, 0.5, 0.08, 0.5, 0.3, 0.1,
-    0.94, 0.3, 0.01, 0.2, 0.04, 0.2, 0.01,
+    0.3, 0.2, 0.43, 0.6, 0.5, 0.08,
+    0.94, 0.3, 0.01, 0.2, 0.04,
     0, 10, 5, 0, 0, 5, 0.1, 5, 0.25
   ),
   max = c(
-    0.35, 0.45, 0.61, 0.95, 2, 0.18, 0.95, 2, 0.2,
-    0.99, 0.35, 0.06, 0.4, 0.07, 0.4, 0.06,
+    0.35, 0.45, 0.61, 0.95, 2, 0.18,
+    0.99, 0.35, 0.06, 0.4, 0.07,
     20, 40, 60, 10, 10, 20, 0.35, 15, 2.2
   ),
   stringsAsFactors = FALSE
@@ -213,20 +213,20 @@ sobol_metric10 <- tell(sobol_design, sobol_outputs_metric10)
 
 # whole grid temperatures
 # air temperature
-saveRDS(sobol_metric1, file = file.path(output_path, paste0(output_name, "_avTa.rds")))
-saveRDS(sobol_metric2, file = file.path(output_path, paste0(output_name, "_SDTa.rds")))
+saveRDS(sobol_metric1, file = file.path(output_path, paste0(output_name,"_", plotnr, "_avTa.rds")))
+saveRDS(sobol_metric2, file = file.path(output_path, paste0(output_name,"_", plotnr, "_SDTa.rds")))
 
 # forest surface temperature
-saveRDS(sobol_metric3, file = file.path(output_path, paste0(output_name, "_avTf.rds")))
-saveRDS(sobol_metric4, file = file.path(output_path, paste0(output_name, "_SDTf.rds")))
+saveRDS(sobol_metric3, file = file.path(output_path, paste0(output_name,"_", plotnr, "_avTf.rds")))
+saveRDS(sobol_metric4, file = file.path(output_path, paste0(output_name,"_", plotnr, "_SDTf.rds")))
 
 # vertical gradient
 # air temperature
-saveRDS(sobol_metric5, file = file.path(output_path, paste0(output_name, "_avTa_v.rds")))
-saveRDS(sobol_metric6, file = file.path(output_path, paste0(output_name, "_gradTa_v.rds")))
-saveRDS(sobol_metric7, file = file.path(output_path, paste0(output_name, "_SDTa_v.rds")))
+saveRDS(sobol_metric5, file = file.path(output_path, paste0(output_name,"_", plotnr, "_avTa_v.rds")))
+saveRDS(sobol_metric6, file = file.path(output_path, paste0(output_name,"_", plotnr, "_gradTa_v.rds")))
+saveRDS(sobol_metric7, file = file.path(output_path, paste0(output_name,"_", plotnr, "_SDTa_v.rds")))
 
 # forest surface temperature
-saveRDS(sobol_metric8, file = file.path(output_path, paste0(output_name, "_avTf_v.rds")))
-saveRDS(sobol_metric9, file = file.path(output_path, paste0(output_name, "_gradTf_v.rds")))
-saveRDS(sobol_metric10, file = file.path(output_path, paste0(output_name, "_SDTf_v.rds")))
+saveRDS(sobol_metric8, file = file.path(output_path, paste0(output_name,"_", plotnr, "_avTf_v.rds")))
+saveRDS(sobol_metric9, file = file.path(output_path, paste0(output_name,"_", plotnr, "_gradTf_v.rds")))
+saveRDS(sobol_metric10, file = file.path(output_path, paste0(output_name,"_", plotnr, "_SDTf_v.rds")))

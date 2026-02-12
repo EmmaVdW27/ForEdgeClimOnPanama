@@ -15,7 +15,7 @@ start_script = Sys.time()
 #########
 # INPUT #
 #########
-plotnr <- "R11" # C13 or R11
+plotnr <- "C13" # C13 or R11
 
 start_time <- as.POSIXct("2023-04-26 14:00:00", tz = "UTC") # first hour you want to run the model for
 end_time <- as.POSIXct("2023-04-26 14:00:00", tz = "UTC")   # last hour you want to run the model for

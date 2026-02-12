@@ -1,12 +1,14 @@
 #' Generate input driver variables
 #'
 #' @return input driver variables
+#' @importFrom readxl read_excel
 #' @export
 create_input_drivers <- function() {
 
   # input files
   temp_input_file_rds <<- readRDS("Data/TMS_macro_2023_C13_and_R11.rds")
   rad_input_file_csv <<- "Data/Table_CNR1_2023.dat"
+  sensor_locations <<- read_excel("Data/sensor_locations_all_plots.xlsx")
 
   # plot parameters
   req_height <<- 1
