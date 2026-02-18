@@ -15,10 +15,10 @@ start_script = Sys.time()
 #########
 # INPUT #
 #########
-plotnr <- "C13" # C13 or R11
+plotnr <- "R11" # C13 or R11
 
-start_time <- as.POSIXct("2023-04-26 14:00:00", tz = "UTC") # first hour you want to run the model for
-end_time <- as.POSIXct("2023-04-26 14:00:00", tz = "UTC")   # last hour you want to run the model for
+start_time <- as.POSIXct("2023-01-01 06:00:00", tz = "UTC") # first hour you want to run the model for
+end_time <- as.POSIXct("2023-01-01 06:00:00", tz = "UTC")   # last hour you want to run the model for
 datetime_series <- seq(start_time, end_time, by = "hour")   # ForEdgeClim is run for all the hours between the first and last hour
 
 #########

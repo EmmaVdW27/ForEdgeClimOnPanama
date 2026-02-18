@@ -3,20 +3,20 @@
 #' @param datetime yyyy-mm-dd hh:mm:ss in UTC
 #' @return macrotemperature, soil temperature, microtemperatures
 #' @importFrom lubridate floor_date with_tz
-#' @importFrom dplyr mutate group_by summarise
+#' @importFrom dplyr mutate group_by summarise select
 #' @export
-import_temp_observations <- function(datetime){
+import_temp_observations <- function(time){
 
   # mutate data set
   temp_input_file <- temp_input_file_rds |>
-    mutate(datetime_UTC = with_tz(datetime_EST, "UTC")) |> # time zone conversion (datetime_EST is already a POSIXct object)
-    mutate(datetime_UTC_hour = floor_date(datetime_UTC, unit = "hour")) # floor the datetimes
+    #mutate(datetime_UTC = with_tz(datetime_EST, "UTC")) |> # time zone conversion (datetime_EST is already a POSIXct object)
+    mutate(datetime_UTC_hour = floor_date(datetime, unit = "hour")) # datetime_UTC, floor the datetimes
 
   # only keep plot of interest
   temp_input_file <- temp_input_file[temp_input_file$plot == plotnr, ]
 
   # only keep datetime of interest
-  temp_input_file <- temp_input_file[temp_input_file$datetime_UTC_hour == datetime, ]
+  temp_input_file <- temp_input_file[temp_input_file$datetime_UTC_hour == time, ]
 
   # MACROTEMPERATURE
   macro_temp <<- mean(temp_input_file$temp_macro, na.rm = TRUE) + 273.15 # in Kelvin
@@ -38,12 +38,12 @@ import_temp_observations <- function(datetime){
       value_mean = mean(value, na.rm = TRUE),
       .groups = "drop"
     )
-  # add sensor locations uit sensor_locations file
-  air_temp_obs <- air_temp_obs %>%
-    left_join(sensor_locations %>% select(SN, x, y), by = "SN")
+  # add sensor locations from sensor_locations file
+  air_temp_obs <- air_temp_obs|>
+    left_join(sensor_locations |> select(SN, x, y), by = "SN")
 
   # save dataframe as CSV
-  write.csv(air_temp_obs, paste0("Data/microtemp_air_obs_", format(datetime, "%Y%m%d_%H"), "_", plotnr, ".csv"), row.names = FALSE)
+  write.csv(air_temp_obs, paste0("Data/microtemp_air_obs_", format(time, "%Y%m%d_%H"), "_", plotnr, ".csv"), row.names = FALSE)
 }
 
 #' Function to import radiative observations (direct and diffuse shortwave and longwave radiation)

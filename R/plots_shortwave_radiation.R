@@ -170,7 +170,7 @@ plots_sw <- function(sw_rad, output_path){
     # ) +
     scale_fill_viridis_c(
       option = "inferno",
-      limits = c(0, 500),
+      limits = c(0, 650),
       oob = scales::squish,
       guide = guide_colorbar(
         barwidth = 1,
@@ -205,7 +205,7 @@ plots_sw <- function(sw_rad, output_path){
     geom_tile()+
     scale_fill_viridis_c(
       option = "inferno",
-      limits = c(0, 500),
+      limits = c(0, 650),
       oob = scales::squish,
       guide = guide_colorbar(
         barwidth = 1,

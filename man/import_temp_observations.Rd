@@ -4,7 +4,7 @@
 \alias{import_temp_observations}
 \title{Function to import temperatures from observations}
 \usage{
-import_temp_observations(datetime)
+import_temp_observations(time)
 }
 \arguments{
 \item{datetime}{yyyy-mm-dd hh:mm:ss in UTC}

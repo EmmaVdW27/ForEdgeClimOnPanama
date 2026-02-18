@@ -1,5 +1,6 @@
 ############################################################################################
 # This script optimizes ForEdgeClim parameters for the whole year with the CMA-ES algorithm (via cmaesr).
+# In the objective function, we minimize 1 - NSE (Nash - Sutcliffe Efficiency).
 #
 # Author: Emma Van de Walle - Q-ForestLab
 ############################################################################################
@@ -36,7 +37,7 @@ plotnr = "C13" # C13 or R11
 
 # We calibrate on 12 days - selected over the 12 months, capturing both seasons
 
-date_string <- 'C13_year_50_generations'
+date_string <- 'C13_NSE_50_generations'
 max_it        <- 49     # generations (there will be max_it + 1 generations)
 
 # 1. First day of each month in 2023
@@ -57,7 +58,8 @@ datetimes <- unlist(
   })
 )
 
-stop_fitness  <- 1      # RMSE target (°C)
+stop_nse <- 0.8
+stop_fitness  <- 1 - stop_nse      # NSE target (unitless)
 lambda        <- NULL   # if NULL we set a heuristic later
 
 #########
@@ -73,11 +75,11 @@ metrics_output_file <- file.path(log_dir, paste0("calibration_metrics_", date_st
 # plot specifics
 if(plotnr == "C13"){
   height_canopy = 33
-  scaling_factor = 1
+  scale_factor = 1
   voxel_TLS <- readRDS("Data/TLS_scaled_DTM_and_grid_C13_Panama.rds")
 }else{
   height_canopy = 35
-  scaling_factor = 6.20/6.22
+  scale_factor = 6.20/6.22
   voxel_TLS <- readRDS("Data/TLS_scaled_DTM_and_grid_R11_Panama.rds")
 }
 
@@ -135,11 +137,14 @@ evaluate_par <- function(par) {
         import_rad_observations(datetime)
 
         # ---- Model run ----
-        voxel_TLS$grid$density = voxel_TLS$grid$density * scale_factor
-        res <- run_foredgeclim(voxel_TLS$grid, datetime)
+        grid_local <- voxel_TLS$grid
+        grid_local$density <- grid_local$density * scale_factor
+        res <- run_foredgeclim(grid_local, datetime)
         micro_grid <- res$micro_grid
         air_temp   <- res$air_temperature
-        if (any(!is.finite(air_temp))) stop("NaN/Inf in air_temp")
+        if (anyNA(air_temp) || any(!is.finite(air_temp), na.rm = TRUE)) {
+          stop("NA/NaN/Inf in air_temp")
+        }
 
         # ---- Observations ----
         key <- format(datetime, "%Y%m%d_%H")
@@ -151,6 +156,8 @@ evaluate_par <- function(par) {
         temp_air_grid <- temp_air_grid %>%
           filter(z == 1) %>%
           select(x, y, temperature)
+        if (nrow(temp_air_grid) == 0) stop("No grid cells at z == 1")
+
 
         # search nearest neighbour
         # matrix with grid coords
@@ -158,6 +165,10 @@ evaluate_par <- function(par) {
 
         # matrix with sensor coords
         sensor_coords <- as.matrix(TOMST[, c("x","y")])
+
+        if (nrow(grid_coords) == 0) stop("Empty grid_coords")
+        if (nrow(sensor_coords) == 0) stop("Empty sensor_coords")
+        if (anyNA(grid_coords) || anyNA(sensor_coords)) stop("NA in coordinates for nn2")
 
         # nearest neighbour search
         nn <- nn2(
@@ -179,19 +190,24 @@ evaluate_par <- function(par) {
 
         list(
           ok          = TRUE,
-          sse         = sum((sim - obs)^2),
+          sse         = sum((sim - obs)^2, na.rm = TRUE),
           n           = length(sim),
-          sum_sim     = sum(sim),
-          sum_obs     = sum(obs),
-          sum_sim2    = sum(sim^2),
-          sum_obs2    = sum(obs^2),
-          sum_sim_obs = sum(sim * obs),
-          sum_diff    = sum(diffs[valid]),
-          sum_diff2   = sum(diffs[valid]^2)
+          sum_sim     = sum(sim, na.rm = TRUE),
+          sum_obs     = sum(obs, na.rm = TRUE),
+          sum_sim2    = sum(sim^2, na.rm = TRUE),
+          sum_obs2    = sum(obs^2, na.rm = TRUE),
+          sum_sim_obs = sum(sim * obs, na.rm = TRUE),
+          sum_diff    = sum(diffs[valid], na.rm = TRUE),
+          sum_diff2   = sum(diffs[valid]^2, na.rm = TRUE)
         )
 
       }, error = function(e) {
-        warning(paste("Crash during evaluation:", format(datetime), "-", e$message))
+        warning(paste(
+          "Crash during evaluation:",
+          format(datetime, "%Y-%m-%d %H:%M:%S"),
+          "-",
+          conditionMessage(e)
+        ))
         list(
           ok = FALSE,
           sse = NA_real_, n = 0L,
@@ -259,13 +275,6 @@ evaluate_par <- function(par) {
   )
 }
 
-# -----------------
-# COST = OBJECTIVE FUNCTION (RMSE)
-# -----------------
-compute_rmse <- function(par) {
-  evaluate_par(par)$RMSE
-}
-
 
 # -----------------
 # EXTRA METRICS: RMSE, R2, NSE, ME, SD
@@ -274,27 +283,43 @@ compute_metrics <- function(par) {
   evaluate_par(par)$metrics
 }
 
-# -------------------
-# Objective wrapper to log each offspring evaluation
-# -------------------
-# Wrapper around objective function so logging is performed
+# -----------------
+# COST = OBJECTIVE FUNCTION (NSE)
+# We maximise NSE, but CMA-ES minimises -> minimise cost = 1 - NSE
+# -----------------
+
 wrapped_obj_fn <- function(x) {
-  rmse <- compute_rmse(x)
+
+  ev <- evaluate_par(x)
+
+  nse  <- ev$metrics$NSE
+  rmse <- ev$metrics$RMSE
+
+  # Convert to minimisation problem
+  # Penalise failed / undefined NSE heavily
+  nse_cost <- if (is.finite(nse)) (1 - nse) else 1e6
+
   .eval_counter <<- .eval_counter + 1L
-  # infer generation and offspring id from eval count and lambda
   gen <- 1L + floor((.eval_counter - 1L) / lambda)
   off <- 1L + ((.eval_counter - 1L) %% lambda)
-  # build row
+
   row <- tibble::tibble(
     eval_id = .eval_counter,
     iter = gen,
     offspring_id = off,
+    nse = nse,
+    nse_cost = nse_cost,
     rmse = rmse,
     time = Sys.time()
-  ) %>% dplyr::bind_cols(tibble::as_tibble_row(stats::setNames(as.list(as.numeric(x)), param_names)))
+  ) %>% dplyr::bind_cols(
+    tibble::as_tibble_row(stats::setNames(as.list(as.numeric(x)), param_names))
+  )
+
   offspring_log <<- dplyr::bind_rows(offspring_log, row)
-  rmse
+
+  nse_cost
 }
+
 
 # -----------------
 # SMOOF WRAPPER with bounds
@@ -303,12 +328,13 @@ wrapped_obj_fn <- function(x) {
 # Necessary to set the objective function (compute_rmse) into a readable format for cmaesr, ie, cmaesr needs a smoof object
 dim_par <- length(start_vals)
 obj_logged <- smoof::makeSingleObjectiveFunction(
-  name = "ForEdgeClim_RMSE_logged",
-  fn   = function(x) wrapped_obj_fn(x), # function to be optimized
-  has.simple.signature = TRUE, # fn accepts a simple vector as input, not a list
-  par.set = ParamHelpers::makeNumericParamSet(len = dim_par, lower = lower_bounds, upper = upper_bounds), # number of params and search space (lower/upper bounds)
-  minimize = TRUE # minimize RMSE, direction of optimalization
+  name = "ForEdgeClim_NSE_logged",
+  fn   = function(x) wrapped_obj_fn(x),
+  has.simple.signature = TRUE,
+  par.set = ParamHelpers::makeNumericParamSet(len = dim_par, lower = lower_bounds, upper = upper_bounds),
+  minimize = TRUE # minimise cost = 1 - NSE
 )
+
 
 
 # -----------------
@@ -317,23 +343,17 @@ obj_logged <- smoof::makeSingleObjectiveFunction(
 # offspring log: one row per objective evaluation (i.e. per offspring)
 offspring_log <- tibble::tibble(
   eval_id = integer(),
-  iter    = integer(),           # generation index (1-based)
-  offspring_id = integer(),      # lambda within generation
+  iter    = integer(),
+  offspring_id = integer(),
+  nse     = numeric(),
+  nse_cost = numeric(),
   rmse    = numeric(),
   time    = as.POSIXct(NA, tz = "UTC")
 ) %>%
   dplyr::bind_cols(tibble::as_tibble_row(stats::setNames(as.list(rep(NA_real_, dim_par)), param_names))) %>%
-  dplyr::slice(0) # no data yet
+  dplyr::slice(0)
 
-# generation log (to be derived post-run)
-generation_log <- tibble::tibble(
-  iter = integer(),
-  best_value = numeric(),
-  sigma_proxy = numeric(),
-  spread_max = numeric(),
-  spread_mean = numeric(),
-  mean_step = numeric()
-)
+
 
 # -----------------
 # RUN CMA-ES
@@ -353,7 +373,7 @@ if ("getDefaultStoppingConditions" %in% getNamespaceExports("cmaesr")) {
   stop_list <- c(stop_list, cmaesr::getDefaultStoppingConditions())
 }
 # Target fitness as additional criterion if supported
-# Stop if best RMSE =< stop_fitness
+# Stop if best cost (= 1 - NSE) =< stop_fitness  (i.e. NSE >= stop_nse)
 if ("stopOnOptFitness" %in% getNamespaceExports("cmaesr")) {
   stop_list <- c(stop_list, list(cmaesr::stopOnOptFitness(stop_fitness)))
 }
@@ -402,26 +422,24 @@ param_mat_cols <- param_names
 generation_log <- offspring_log %>%
   dplyr::group_by(iter) %>%
   dplyr::summarise(
-    best_value = min(rmse, na.rm = TRUE), # get lowest RMSE within each generation
-    params = list(as.matrix(dplyr::pick(dplyr::all_of(param_mat_cols)))), # make a list with for every generation a lambda x d matrix with paramvalues
+    best_cost = min(nse_cost, na.rm = TRUE),
+    best_nse  = max(nse, na.rm = TRUE),
+    best_rmse = rmse[which.max(dplyr::if_else(is.finite(nse), nse, -Inf))][1],
+    params = list(as.matrix(dplyr::pick(dplyr::all_of(param_mat_cols)))),
     .groups = "drop"
   ) %>%
   dplyr::mutate(
-    spreads = purrr::map(params, get_spreads), # get spread values per generation
-    sigma_proxy = purrr::map_dbl(spreads, "sigma_proxy"), # get sigma_proxy from spreads
+    spreads = purrr::map(params, get_spreads),
+    sigma_proxy = purrr::map_dbl(spreads, "sigma_proxy"),
     spread_max  = purrr::map_dbl(spreads, "spread_max"),
     spread_mean = purrr::map_dbl(spreads, "spread_mean"),
-    mean_param  = purrr::map(params, ~ colMeans(.x, na.rm = TRUE)) # mean param value per generation
+    mean_param  = purrr::map(params, ~ colMeans(.x, na.rm = TRUE))
   ) %>%
-  # Get change in population mean between generations
-  # This measures how strong the population center shifts from one generation to the next.
-  # This change is defined as the Euclidean distance between consecutive generation means.
-  # A low value means convergence.
   dplyr::mutate(mean_step = c(NA_real_,
                               purrr::map2_dbl(mean_param[-length(mean_param)], mean_param[-1],
                                               ~ sqrt(sum((.y - .x)^2))))) %>%
-  # Keep columns of interest
-  dplyr::select(iter, best_value, sigma_proxy, spread_max, spread_mean, mean_step)
+  dplyr::select(iter, best_nse, best_cost, best_rmse, sigma_proxy, spread_max, spread_mean, mean_step)
+
 
 # -----------------
 # SAVE LOGS
@@ -429,10 +447,12 @@ generation_log <- offspring_log %>%
 readr::write_csv(offspring_log, logfile_offspring)
 readr::write_csv(generation_log, logfile_gener)
 
-# ---- Search best offspring based on RMSE ----
+# ---- Search best offspring based on NSE ----
 best_offspring <- offspring_log %>%
-  dplyr::filter(is.finite(rmse)) %>%
-  dplyr::slice_min(rmse, n = 1)   # row with lowest RMSE
+  dplyr::filter(is.finite(nse)) %>%
+  dplyr::slice_max(nse, n = 1)
+
+
 
 # Get corresponding parameter-vector
 best_offspring_par <- best_offspring %>%
@@ -442,10 +462,16 @@ best_offspring_par <- best_offspring %>%
 # Console summaries
 cat("\nOptimised parameters (final):\n")
 print(res$best.param)
-cat("\nMinimal RMSE observed:\n")
+
+cat("\nBest (min) objective value observed (cost = 1 - NSE):\n")
 print(res$best.fitness)
-cat("\nBest offspring based on RMSE in offspring_log (should be same as above):\n")
-print(best_offspring$rmse)
+
+cat("\nCorresponding NSE (approx):\n")
+print(1 - res$best.fitness)
+
+cat("\nBest offspring NSE in offspring_log:\n")
+print(best_offspring$nse)
+
 
 # -----------------
 # EXTRA METRICS FOR BEST PARAMETERS SET

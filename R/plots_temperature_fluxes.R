@@ -65,7 +65,7 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
       #limits = c(26, 44),
       guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
     labs(title = paste("Forest surface temperature"),
-         x = "Easting (m)", y = "Height", fill = "Temperature (°C)")+
+         x = "Easting (m)", y = "Height (m)", fill = "Temperature (°C)")+
     coord_fixed(ratio = 1, clip = "off") +
     theme_bw() #+
     # theme(
@@ -168,7 +168,7 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
     scale_fill_gradientn(
       colors = colors,
       values = rescale(c(0.25, 0.5, 0.75, 1)),
-      limits = c(26.5, 30),
+      limits = c(26, 28.5),
       oob = scales::squish,
       guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
     labs(title = NULL,
@@ -200,7 +200,7 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
     scale_fill_gradientn(
       colors = colors,
       values = rescale(c(0.25, 0.5, 0.75, 1)),
-      limits = c(26.5, 30),
+      limits = c(26, 28.5),
       oob = scales::squish,
       guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
     labs(title = NULL,
@@ -232,7 +232,7 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
     scale_fill_gradientn(
       colors = colors,
       values = rescale(c(0.25, 0.5, 0.75, 1)),
-      limits = c(28, 37),
+      limits = c(26.5, 35.5),
       oob = scales::squish,
       guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
     labs(title = NULL,
@@ -264,7 +264,7 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
     scale_fill_gradientn(
       colors = colors,
       values = rescale(c(0.25, 0.5, 0.75, 1)),
-      limits = c(28, 37),
+      limits = c(26.5, 35.5),
       oob = scales::squish,
       guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
     labs(title = NULL,

@@ -18,7 +18,7 @@ start_analysis <- Sys.time()
 # -----------------
 # INPUT
 # -----------------
-season = "C13_year_50_generations"
+season = "C13_NSE_50_"
 
 number_of_params = 3
 
