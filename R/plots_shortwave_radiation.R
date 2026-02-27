@@ -157,6 +157,35 @@ plots_sw <- function(sw_rad, output_path){
 
   ggsave(paste0(output_path, '/SW_F_b_d_down.png'), plot = F_b_d_down, width = 9, height = 3, dpi = 500)
 
+  # F_down ground surface plot:
+  F_down_surface_2D = ggplot(final_ground_surface_results, aes(x = X, y = Y, fill = F_b_down + F_d_down)) +
+    geom_tile()+
+    scale_fill_viridis_c(
+      option = "inferno",
+      #limits = c(0, 650),
+      guide = guide_colorbar(
+        barwidth = 1,
+        barheight = 10,
+        frame.colour = "black",
+        ticks.colour = "black"
+      )
+    ) +
+    labs(title = "Shortwave downward radiation at ground level",
+         x = "Easting (m)", y = "Norhting (m)", fill = bquote(Flux~(W~m^{-2})))+
+    coord_fixed(ratio = 1) +
+    theme_bw() #+
+  # theme(
+  #   plot.title = element_text(size = 20),
+  #   plot.caption = element_text(hjust = 0, color = "black"),
+  #   axis.title = element_text(size = 20),
+  #   axis.text = element_text(size = 16),
+  #   strip.text = element_text(size = 18),
+  #   legend.title = element_text(size = 18),
+  #   legend.text  = element_text(size = 16)
+  # )
+
+  ggsave(paste0(output_path, '/SW_F_b_d_down_ground.png'), plot = F_down_surface_2D, width = 6, height = 6, dpi = 300)
+
   # 3D plots #
   ############
 

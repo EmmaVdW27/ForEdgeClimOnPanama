@@ -129,7 +129,7 @@ sw_two_stream <- function(soil_reflect, density, F_sky_diff, F_sky_dir, Kd, Kb, 
     F_d_down = round(down, 0),
     F_d_up = round(up, 0),
     F_b_down = round(direct_radiation, 0),
-    net_sw = c(round(net_sw, 0), 0),  # No net radiation in atmosphere (no structure here)
+    net_sw = c(round(net_sw, 0), 0),  # Net radiation in atmosphere is set to zero (no structure here)
     albedo = c(rep(' ', n), round( up[length(up)]/(F_sky_diff + F_sky_dir), 3 ) )
   )
 

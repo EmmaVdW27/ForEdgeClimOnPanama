@@ -18,7 +18,7 @@ lw_two_stream <- function(soil_reflect, density, F_sky_lw, temperature, T_soil, 
 
   # Calculate black body emission at the temperature of the layer.
   # Black body emission of atmosphere is defined to be 0 because F_sky_lw has already been defined as above canopy input.
-  black = c(e_forest*sigma_SB * temperature^4,0)
+  black = c(e_forest*sigma_SB * temperature^4, 0)
   # Black body emission of the soil
   # Emissivity of soil = absorption of soil for lw radiation => emissivity = 1 - omega_g
   black_g = (1-omega_g)*sigma_SB*T_soil^4
@@ -47,7 +47,7 @@ lw_two_stream <- function(soil_reflect, density, F_sky_lw, temperature, T_soil, 
   # no Kappa and Delta as in shortwave RTM
 
   # Boundary conditions
-  y[2*n+2] <- F_sky_diff - black[n+1] # Downward (incoming) longwave radiation at top canopy.
+  y[2*n+2] <- F_sky_diff #- black[n+1] # Downward (incoming) longwave radiation above canopy.
   y[1] <- black_g - (1 - omega_g)*black[1] # Upward (outgoing) longwave radiation from the ground surface.
 
   S[2 * n + 2, 2 * n + 1] <- gamma_plus[n+1]
@@ -108,6 +108,7 @@ lw_two_stream <- function(soil_reflect, density, F_sky_lw, temperature, T_soil, 
 
   #light_diff_level <- 0.5 * (down[indices2] + down[kp1])
   net_lw <- (down[kp1] - down[indices2]) + (up[indices2] - up[kp1])
+
   # There are no light levels for atmosphere
   #light_diff_level <- c(light_diff_level, NA)
 
@@ -118,7 +119,7 @@ lw_two_stream <- function(soil_reflect, density, F_sky_lw, temperature, T_soil, 
     F_d_down = round(down, 0),
     F_d_up = round(up, 0),
     #BB_emission = black,
-    net_lw = c(round(net_lw, 0), 0)  # No net radiation in the atmosphere (no structure there)
+    net_lw = c(round(net_lw, 0), 0 )  # Net radiation in atmosphere is set to zero (no structure here)
   )
 
   return(result)

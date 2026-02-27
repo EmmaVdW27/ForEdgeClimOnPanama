@@ -20,7 +20,7 @@ library(htmlwidgets)
 # INPUT #
 #########
 
-plotnr = "R11" #  C13 or R11
+plotnr = "C13" #  C13 or R11
 
 # time window (Panama time = EST, UTC-5)
 t_start <- as.POSIXct("2023-01-01 00:00:00", tz = "EST")
@@ -33,7 +33,7 @@ t_end   <- as.POSIXct("2023-12-31 00:00:00", tz = "EST")
 # input file observations
 input_temps <- readRDS("Data/TMS_macro_2023_C13_and_R11.rds")
 # input file model
-input_model <- readRDS(paste0("Output/timeseries/timeseries_", plotnr, ".rds"))
+input_model <- readRDS(paste0("Output/timeseries/data/timeseries_", plotnr, ".rds"))
 
 # mutate model outputs
 model <- input_model %>%
@@ -51,7 +51,6 @@ model <- input_model %>%
 temps <- input_temps %>%
   filter(sensor_name == "TMS_T3",
          plot == plotnr) %>%
-  #mutate(datetime_EST = as.POSIXct(datetime_EST, tz = "EST")) %>%
   filter(datetime_EST >= t_start & datetime_EST <= t_end)
 
 df_mean <- temps %>%
@@ -102,10 +101,10 @@ for(i in seq_len(nrow(season_rects))) {
   col <- if (season_rects$season[i] == "dry") "rgba(255,165,0,0.15)" else "rgba(173,216,230,0.15)"
   p <- p %>% dyShading(from = season_rects$from[i], to = season_rects$to[i], color = col)
 }
-print(p)
+#print(p)
 
 saveWidget(
   p,
-  file = paste0("Output/timeseries_slider_", plotnr, ".html"),
+  file = paste0("Output/timeseries/plots/timeseries_slider_", plotnr, ".html"),
   selfcontained = TRUE
 )

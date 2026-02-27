@@ -26,10 +26,10 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
   #############################################
   voxel_grid = structure_grid
   final_results <<- shortwave_two_stream_RTM(datetime, lat, lon, voxel_grid,
-                           F_sky_diff_init, F_sky_dir_init,
-                           omega_g_v,
-                           Kd_v, Kb_v,
-                           omega, betad, beta0) # A lot of these parameters are global parameters and actually do not need to be stated as arguments.
+                                             F_sky_diff_init, F_sky_dir_init,
+                                             omega_g_v,
+                                             Kd_v, Kb_v,
+                                             omega, betad, beta0) # A lot of these parameters are global parameters and actually do not need to be stated as arguments.
   # saveRDS(final_results, 'Output/SW_DATA.rds')
 
   den <<- final_results$density
@@ -58,8 +58,8 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
     T_soil = macro_temp
   )
   final_results_lw = longwave_two_stream_RTM(voxel_grid, micro_grid, lw_two_stream,
-                                                F_sky_lw, omega_g_lw_v, macro_temp,
-                                                Kd_lw_v, omega_lw, beta_lw)
+                                             F_sky_lw, omega_g_lw_v, macro_temp,
+                                             Kd_lw_v, omega_lw, beta_lw)
   net_LW <- final_results_lw$net_lw
   LW_down <- final_results_lw$F_d_down
   LW_up <- final_results_lw$F_d_up
@@ -131,8 +131,8 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
     #################
 
     final_results_lw = longwave_two_stream_RTM(voxel_grid, micro_grid, lw_two_stream,
-                                                  F_sky_lw, omega_g_lw_v, macro_temp,
-                                                  Kd_lw_v, omega_lw, beta_lw) # A lot of these parameters are global parameters and actually do not need to be stated as arguments.
+                                               F_sky_lw, omega_g_lw_v, macro_temp,
+                                               Kd_lw_v, omega_lw, beta_lw) # A lot of these parameters are global parameters and actually do not need to be stated as arguments.
 
 
     net_LW = final_results_lw$net_lw
@@ -235,6 +235,8 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
 
     # Air temperature update based on a linearization as is done in microclimc (Maclean & Klinges, 2021).
     T_air_vec <- ( w_macro_z*g_macro * macro_temp + w_soil*g_soil * micro_grid$T_ground + ifelse(den == 0, w_forest*g_forest * micro_grid$mean_temp, w_forest*g_forest *micro_grid$temperature) )/ ( w_macro_z*g_macro + w_soil*g_soil + w_forest*g_forest)
+
+    T_air_vec <- T_air_vec
 
   }
 

@@ -90,7 +90,7 @@ for(plotnr in plots){
     )
     # Focused parameter sequence in order from most influential to least influential (to be plot in this order)
     focus_params <- c("infl_macro", "infl_soil", "g_macro",
-                      "infl_forest", "g_soil", "k_soil",
+                      "g_soil", "infl_forest", "k_soil",
                        "h", "p_ground", "g_forest")
     # Shortwave parameter sequence
     SW_params <- c("betad", "beta0", "omega", "Kd_v", "Kb_v", "omega_g_v")
@@ -99,13 +99,13 @@ for(plotnr in plots){
 
     focus_colors <- c(
       "#3B4CC0",  # deep blue
-      "#F4A259",  # orange
       "#5E7FDB",  # blue
-      "#D62828",  # red
+      "#F4A259",  # orange
       "#F7C58A",  # light orange
-      "#A4161A",  # dark red
       "#87AFDE",  # light blue
+      "#D62828",  # red
       "#6A040F",  # very dark red
+      "#A4161A",  # dark red
       "#E98B1E"   # deep orange
     )
 

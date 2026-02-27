@@ -152,6 +152,53 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
 
   ggsave(paste0(output_path, '/temp_air.png'), plot = temp_air_plot, width = 9, height = 3, dpi = 500)
 
+  # 2D tile plot for ground level surface temperature
+  temp_surf_plot_2D_ground = ggplot(surface_temperature_ground, aes(x = x, y = y, fill = temperature)) +
+    geom_tile()+
+    scale_fill_gradientn(
+      colors = colors,
+      values = rescale(c(0.25, 0.5, 0.75, 1)),
+      #limits = c(25.5, 38),
+      guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
+    labs(title = "Forest surface temperature at ground level",
+         x = 'Easting (m)', y = "Norhting (m)", fill = "Temperature (°C)")+
+    coord_fixed(ratio = 1) +
+    theme_bw() #+
+  # theme(
+  #   plot.title = element_text(size = 20),
+  #   plot.caption = element_text(hjust = 0, color = "black"),
+  #   axis.title = element_text(size = 20),
+  #   axis.text = element_text(size = 16),
+  #   strip.text = element_text(size = 18),
+  #   legend.title = element_text(size = 18),
+  #   legend.text  = element_text(size = 16)
+  # )
+
+  ggsave(paste0(output_path, '/temp_surface_ground.png'), plot = temp_surf_plot_2D_ground, width = 6, height = 6, dpi = 300)
+
+  # 2D tile plot for ground level air temperature
+  temp_air_plot_2D_ground = ggplot(ground_air_temperature, aes(x = x, y = y, fill = temperature)) +
+    geom_tile()+
+    scale_fill_gradientn(
+      colors = colors,
+      values = rescale(c(0.25, 0.5, 0.75, 1)),
+      #limits = c(25.5, 38),
+      guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
+    labs(title = "Air temperature at ground level",
+         x = 'Easting (m)', y = "Norhting (m)", fill = "Temperature (°C)")+
+    coord_fixed(ratio = 1) +
+    theme_bw() #+
+  # theme(
+  #   plot.title = element_text(size = 20),
+  #   plot.caption = element_text(hjust = 0, color = "black"),
+  #   axis.title = element_text(size = 20),
+  #   axis.text = element_text(size = 16),
+  #   strip.text = element_text(size = 18),
+  #   legend.title = element_text(size = 18),
+  #   legend.text  = element_text(size = 16)
+  # )
+
+  ggsave(paste0(output_path, '/temp_air_ground.png'), plot = temp_air_plot_2D_ground, width = 6, height = 6, dpi = 300)
 
   # 3D plots #
   ############
@@ -168,7 +215,7 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
     scale_fill_gradientn(
       colors = colors,
       values = rescale(c(0.25, 0.5, 0.75, 1)),
-      limits = c(26, 28.5),
+      limits = c(25.5, 33),
       oob = scales::squish,
       guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
     labs(title = NULL,
@@ -200,7 +247,7 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
     scale_fill_gradientn(
       colors = colors,
       values = rescale(c(0.25, 0.5, 0.75, 1)),
-      limits = c(26, 28.5),
+      limits = c(25.5, 33),
       oob = scales::squish,
       guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
     labs(title = NULL,
@@ -232,7 +279,7 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
     scale_fill_gradientn(
       colors = colors,
       values = rescale(c(0.25, 0.5, 0.75, 1)),
-      limits = c(26.5, 35.5),
+      limits = c(25.5, 38),
       oob = scales::squish,
       guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
     labs(title = NULL,
@@ -264,7 +311,7 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
     scale_fill_gradientn(
       colors = colors,
       values = rescale(c(0.25, 0.5, 0.75, 1)),
-      limits = c(26.5, 35.5),
+      limits = c(25.5, 38),
       oob = scales::squish,
       guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
     labs(title = NULL,

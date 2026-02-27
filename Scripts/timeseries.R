@@ -33,9 +33,9 @@ plotnr = "R11" # C13 or R11
 
 params = list(
   # Calibrated parameters (HEAT)
-  infl_macro = 6.31, g_macro = 39.91, infl_soil = 2.74,
-  # C13: infl_macro = 7.69, g_macro = 39.96, infl_soil = 8.49,
-  # R11: infl_macro = 6.31, g_macro = 39.91, infl_soil = 2.74,
+  infl_macro = 32.01, g_macro = 38.88, infl_soil = 3.31,
+  # C13: infl_macro = 16.03, g_macro = 38.87, infl_soil = 3.05,
+  # R11: infl_macro = 32.01, g_macro = 38.88, infl_soil = 3.31,
   # uncalibrated, fixed values: infl_macro = 32.5, g_macro = 25, infl_soil = 5,
 
   # Fixed parameters (SW RTM)
@@ -50,8 +50,8 @@ params = list(
 ## timeseries
 all_datetimes <- c(
   seq(
-    from = as.POSIXct("2023-01-01 06:00:00", tz = "UTC"),
-    to   = as.POSIXct("2023-01-01 08:00:00", tz = "UTC"),
+    from = as.POSIXct("2023-01-01 00:00:00", tz = "UTC"),
+    to   = as.POSIXct("2023-12-31 31:00:00", tz = "UTC"),
     by   = "hour"
   )
 )

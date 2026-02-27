@@ -128,7 +128,7 @@ m_o_time_and_position <- ggplot(val_data_all, aes(x = obs, y = mod)) +
     colour = "red", hjust = -2, vjust = -1, fontface = "bold", size = 10
   )
 
-print(m_o_time_and_position)
+#print(m_o_time_and_position)
 ggsave(file.path(output_path, paste0("model_vs_obs_over_time_and_position_", base_plot, "_both.png")),
        plot = m_o_time_and_position, width = 16, height = 10, dpi = 300)
 
@@ -173,7 +173,7 @@ time_residual <- ggplot(val_data_all, aes(x = datetime, y = resid)) +
     size = 10
   )
 
-print(time_residual)
+#print(time_residual)
 ggsave(file.path(output_path, paste0("time_series_residual_", base_plot, "_both.png")),
        plot = time_residual, width = 16, height = 10, dpi = 300)
 
@@ -217,7 +217,7 @@ hour_residual <- ggplot(val_data_all_h, aes(x = hour_f, y = resid)) +
     data = lab_resid_df,
     aes(x = -Inf, y = Inf, label = lab_resid),
     inherit.aes = FALSE,
-    hjust = -0.1, vjust = 1.2,
+    hjust = -0.1, vjust = 4.3,
     label.size = 0.6,
     label.r = unit(0.15, "lines"),
     fill = "white",
@@ -226,7 +226,7 @@ hour_residual <- ggplot(val_data_all_h, aes(x = hour_f, y = resid)) +
   )
 
 
-print(hour_residual)
+#print(hour_residual)
 ggsave(
   file.path(output_path, paste0("residual_by_hour_", base_plot, "_both.png")),
   plot = hour_residual, width = 16, height = 10, dpi = 300
