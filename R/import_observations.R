@@ -18,44 +18,44 @@ import_temp_observations <- function(time){
   temp_input_file <- temp_input_file[temp_input_file$datetime_UTC_hour == time, ]
 
   # MACROTEMPERATURE
-  #macro_temp <<- mean(temp_input_file$temp_macro, na.rm = TRUE) + 273.15 # in Kelvin
+  macro_temp <<- mean(temp_input_file$temp_macro, na.rm = TRUE) + 273.15 # in Kelvin
 
-  # -----------------------------
-  # MACROTEMPERATURE (tower 48 m)
-  # -----------------------------
-
-  T_48m <- mean(temp_input_file$temp_macro, na.rm = TRUE)  # in °C
-
-  hour_now <- as.numeric(format(time, "%H"))
-
-  # Define sunset and sunrise (local time assumption -> -5)
-  sunset  <- 23
-  sunrise <- 11
-
-  # Maximum nocturnal difference (°C)
-  deltaT_max <- 2
-  k <- 0.7  # stabilisation rate
-
-  if(hour_now >= sunset | hour_now < sunrise){
-
-    # Compute hours since sunset
-    if(hour_now >= sunset){
-      t_since_sunset <- hour_now - sunset
-    } else {
-      t_since_sunset <- (24 - sunset) + hour_now
-    }
-
-    # Exponential growth of nocturnal stratification
-    deltaT <- deltaT_max * (1 - exp(-k * t_since_sunset))
-
-  } else {
-
-    deltaT <- 0
-
-  }
-
-  # Canopy-top macro temperature (35 m)
-  macro_temp <<- (T_48m - deltaT) + 273.15  # convert to Kelvin
+  # # -----------------------------
+  # # MACROTEMPERATURE (tower 48 m)
+  # # -----------------------------
+  #
+  # T_48m <- mean(temp_input_file$temp_macro, na.rm = TRUE)  # in °C
+  #
+  # hour_now <- as.numeric(format(time, "%H"))
+  #
+  # # Define sunset and sunrise (local time assumption -> -5)
+  # sunset  <- 23
+  # sunrise <- 11
+  #
+  # # Maximum nocturnal difference (°C)
+  # deltaT_max <- 2
+  # k <- 0.7  # stabilisation rate
+  #
+  # if(hour_now >= sunset | hour_now < sunrise){
+  #
+  #   # Compute hours since sunset
+  #   if(hour_now >= sunset){
+  #     t_since_sunset <- hour_now - sunset
+  #   } else {
+  #     t_since_sunset <- (24 - sunset) + hour_now
+  #   }
+  #
+  #   # Exponential growth of nocturnal stratification
+  #   deltaT <- deltaT_max * (1 - exp(-k * t_since_sunset))
+  #
+  # } else {
+  #
+  #   deltaT <- 0
+  #
+  # }
+  #
+  # # Canopy-top macro temperature (35 m)
+  # macro_temp <<- (T_48m - deltaT) + 273.15  # convert to Kelvin
 
 
   # SOILTEMPERATURE
