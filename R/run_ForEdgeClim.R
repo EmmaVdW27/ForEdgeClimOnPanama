@@ -126,6 +126,36 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
 
   for (iter in 1:max_iter) {
 
+    # --------------------------------------------------
+    # Dynamic macro boundary, based on canopy temperature
+    # --------------------------------------------------
+
+    # keep original macro_temp
+    if (iter == 1) {
+      macro_temp_orig <- macro_temp
+    }
+
+    # Reset macro_temp every iteration towards original
+    macro_temp <- macro_temp_orig
+
+    # get top (5) layers per column
+    top5_per_col <- micro_grid |>
+      dplyr::filter(den > 0) |>
+      dplyr::group_by(x, y) |>
+      dplyr::arrange(desc(z), .by_group = TRUE) |>
+      dplyr::slice_head(n = 5) |>
+      dplyr::ungroup()
+
+    mean_top_temp <- mean(top5_per_col$temperature, na.rm = TRUE)
+
+    #print(mean_top_temp)
+
+    # proxy for macro-canopy decoupling
+    if (!is.na(mean_top_temp) && mean_top_temp < macro_temp) {
+      macro_temp <- mean_top_temp
+    }
+
+
     #################
     # NET RADIATION #
     #################
@@ -236,7 +266,6 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
     # Air temperature update based on a linearization as is done in microclimc (Maclean & Klinges, 2021).
     T_air_vec <- ( w_macro_z*g_macro * macro_temp + w_soil*g_soil * micro_grid$T_ground + ifelse(den == 0, w_forest*g_forest * micro_grid$mean_temp, w_forest*g_forest *micro_grid$temperature) )/ ( w_macro_z*g_macro + w_soil*g_soil + w_forest*g_forest)
 
-    T_air_vec <- T_air_vec
 
   }
 

@@ -2,26 +2,31 @@
 #'
 #' @param datetime yyyy-mm-dd hh:mm:ss in UTC
 #' @return macrotemperature, soil temperature, microtemperatures
-#' @importFrom lubridate floor_date with_tz
+#' @importFrom lubridate floor_date with_tz dmy_hms
 #' @importFrom dplyr mutate group_by summarise select
+#' @importFrom readr read_csv
 #' @export
 import_temp_observations <- function(time){
 
-  # mutate data set
-  temp_input_file <- temp_input_file_rds |>
-    mutate(datetime_UTC_hour = floor_date(datetime, unit = "hour")) # datetime_UTC, floor the datetimes
+  # -----------------------------
+  # MACROTEMPERATURE from clearing or Lutz
+  # -----------------------------
 
-  # only keep plot of interest
-  temp_input_file <- temp_input_file[temp_input_file$plot == plotnr, ]
-
-  # only keep datetime of interest
-  temp_input_file <- temp_input_file[temp_input_file$datetime_UTC_hour == time, ]
-
-  # MACROTEMPERATURE
-  macro_temp <<- mean(temp_input_file$temp_macro, na.rm = TRUE) + 273.15 # in Kelvin
+  # macro_temp_input <- read_csv(macro_input_file_csv, show_col_types = FALSE)
+  # macro_temp_input$datetime_est <- dmy_hms(macro_temp_input$datetime, tz = "EST") # datetime is character string with time in EST = UTC-5 (no summer or winter time)
+  #
+  # macro_temp_input$datetime_utc <- with_tz(macro_temp_input$datetime_est, tzone = "UTC") # convert to UTC
+  #
+  # macro_hourly <- macro_temp_input |> # hourly averages
+  #   mutate(datetime_hour = floor_date(datetime_utc, "hour")) |>
+  #   group_by(datetime_hour) |>
+  #   summarise(at_hour = mean(at, na.rm = TRUE),
+  #             .groups = "drop")
+  #
+  # macro_temp <<- macro_hourly$at_hour[macro_hourly$datetime_hour == time] + 273.15 # specific hour and °C to K
 
   # # -----------------------------
-  # # MACROTEMPERATURE (tower 48 m)
+  # # MACROTEMPERATURE from AVA tower 48 m
   # # -----------------------------
   #
   # T_48m <- mean(temp_input_file$temp_macro, na.rm = TRUE)  # in °C
@@ -57,6 +62,18 @@ import_temp_observations <- function(time){
   # # Canopy-top macro temperature (35 m)
   # macro_temp <<- (T_48m - deltaT) + 273.15  # convert to Kelvin
 
+  # mutate data set
+  temp_input_file <- temp_input_file_rds |>
+    mutate(datetime_UTC_hour = floor_date(datetime, unit = "hour")) # datetime_UTC, floor the datetimes
+
+  # only keep plot of interest
+  temp_input_file <- temp_input_file[temp_input_file$plot == plotnr, ]
+
+  # only keep datetime of interest
+  temp_input_file <- temp_input_file[temp_input_file$datetime_UTC_hour == time, ]
+
+  # MACROTEMPERATURE
+  macro_temp <<- mean(temp_input_file$temp_macro, na.rm = TRUE) + 273.15 # in Kelvin
 
   # SOILTEMPERATURE
   # only keep soil sensors
@@ -81,6 +98,7 @@ import_temp_observations <- function(time){
 
   # save dataframe as CSV
   write.csv(air_temp_obs, paste0("Data/microtemp_air_obs_", format(time, "%Y%m%d_%H"), "_", plotnr, ".csv"), row.names = FALSE)
+
 }
 
 #' Function to import radiative observations (direct and diffuse shortwave and longwave radiation)
