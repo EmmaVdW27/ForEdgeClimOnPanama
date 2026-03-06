@@ -15,10 +15,10 @@ start_script = Sys.time()
 #########
 # INPUT #
 #########
-plotnr <- "R11" # C13 or R11
+plotnr <- "C13" # C13 or R11
 
-start_time <- as.POSIXct("2023-05-15 08:00:00", tz = "UTC") # first hour you want to run the model for
-end_time <- as.POSIXct("2023-05-15 08:00:00", tz = "UTC")   # last hour you want to run the model for
+start_time <- as.POSIXct("2023-08-12 19:00:00", tz = "UTC") # first hour you want to run the model for
+end_time <- as.POSIXct("2023-08-12 19:00:00", tz = "UTC")   # last hour you want to run the model for
 datetime_series <- seq(start_time, end_time, by = "hour")   # ForEdgeClim is run for all the hours between the first and last hour
 
 #########
@@ -42,7 +42,7 @@ for (current_datetime in datetime_series) {
 
   # Make sure the current datetime is a POSIXct object
   current_datetime <- as.POSIXct(current_datetime, origin = "1970-01-01", tz = "UTC")
-  print(paste0('Running model for plot ', plotnr, ' at ', current_datetime, ' UTC...'))
+  cat(paste0('Running model for plot ', plotnr, ' at ', current_datetime, ' UTC...\n'))
 
   #################################################
   # INPUT DRIVERS, CONSTANTS AND MODEL PARAMETERS #
@@ -83,25 +83,80 @@ for (current_datetime in datetime_series) {
   res = run_foredgeclim(voxel_TLS$grid, current_datetime)
   saveRDS(res, paste0(output_path, '/model_results.rds'))
 
-  ############
-  # PLOTTING #
-  ############
+  #--------------------
+  ########################################################
+  # COMPARE MODELLED AND OBSERVED TEMPERATURES (TOMST)  #
+  ########################################################
 
-  # Digital Terrain Model & structural grid plots
-  plots_dtm_struct(dtm = voxel_TLS$dtm, grid = voxel_TLS$grid, output_path)
+  library(RANN)
+  library(dplyr)
 
-  # Shortwave radiation plots
-  plots_sw(sw_rad = res$sw_rad, output_path)
+  # ---- Import TOMST observations ----
+  key <- format(current_datetime, "%Y%m%d_%H")
+  TOMST <- read.csv(paste0("Data/microtemp_air_obs_", key, "_", plotnr, ".csv"))
 
-  # Longwave radiation plots
-  plots_lw(lw_rad = res$lw_rad, output_path)
+  # ---- Extract modelled temperatures at z = 1 ----
+  temp_air_grid <- res$micro_grid
+  temp_air_grid$temperature <- res$air_temperature - 273.15
 
-  # Flux plots
-  plots_flux(res$micro_grid, res$net_radiation, res$sensible_flux, res$latent_flux, res$ground_flux, output_path, current_datetime)
+  temp_air_grid <- temp_air_grid %>%
+    filter(z == 1) %>%
+    select(x, y, temperature)
 
-  # Temperature plots
-  plots_temp(res$micro_grid, res$air_temperature, output_path, current_datetime)
+  # ---- Nearest neighbour search ----
+
+  # matrix with grid coordinates
+  grid_coords <- as.matrix(temp_air_grid[, c("x", "y")])
+
+  # matrix with sensor coordinates
+  sensor_coords <- as.matrix(TOMST[, c("x", "y")])
+
+  # nearest neighbour
+  nn <- nn2(
+    data = grid_coords,
+    query = sensor_coords,
+    k = 1
+  )
+
+  idx <- nn$nn.idx[, 1]
+
+  # ---- Add modelled temperatures to observations ----
+  TOMST <- TOMST %>%
+    mutate(
+      datetime = current_datetime,
+      temperature_model = temp_air_grid$temperature[idx],
+      resid = temperature_model - value_mean
+    )
+
+  # ---- Calculate mean temperatures ----
+  mean_model <- mean(TOMST$temperature_model, na.rm = TRUE)
+  mean_obs   <- mean(TOMST$value_mean, na.rm = TRUE)
+
+  cat("Mean model temperature:", round(mean_model, 2), "°C\n")
+  cat("Mean observed temperature:", round(mean_obs, 2), "°C\n")
+
+  #--------------------------
+
+
+  # ############
+  # # PLOTTING #
+  # ############
+  #
+  # # Digital Terrain Model & structural grid plots
+  # plots_dtm_struct(dtm = voxel_TLS$dtm, grid = voxel_TLS$grid, output_path)
+  #
+  # # Shortwave radiation plots
+  # plots_sw(sw_rad = res$sw_rad, output_path)
+  #
+  # # Longwave radiation plots
+  # plots_lw(lw_rad = res$lw_rad, output_path)
+  #
+  # # Flux plots
+  # plots_flux(res$micro_grid, res$net_radiation, res$sensible_flux, res$latent_flux, res$ground_flux, output_path, current_datetime)
+  #
+  # # Temperature plots
+  # plots_temp(res$micro_grid, res$air_temperature, output_path, current_datetime)
 
 }
 end_script = Sys.time()
-print(paste0('Total run time = ', round(as.numeric(end_script - start_script, units = "secs"), 2), ' s'))
+cat(paste0('Total run time = ', round(as.numeric(end_script - start_script, units = "secs"), 2), ' s'))

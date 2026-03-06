@@ -51,7 +51,7 @@ params = list(
 all_datetimes <- c(
   seq(
     from = as.POSIXct("2023-01-01 00:00:00", tz = "UTC"),
-    to   = as.POSIXct("2023-12-31 31:00:00", tz = "UTC"),
+    to   = as.POSIXct("2023-12-31 23:00:00", tz = "UTC"),
     by   = "hour"
   )
 )

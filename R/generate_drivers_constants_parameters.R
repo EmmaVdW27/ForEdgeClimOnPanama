@@ -78,12 +78,12 @@ create_model_parameters <- function() {
   omega_g_lw_v <<- 0.055  # Ground scattering for longwave radiation
 
   # parameters for air to air heat convection (C)
-  h <<-  10                # Convection coefficient of air (W/m2/K), higher value means more wind/more turbulence
+  h <<- 10                # Convection coefficient of air (W/m2/K), higher value means more wind/more turbulence
 
   # parameters for update linearization air temperature
-  g_macro <<- 25#38.88 #          # Convective heat transfer coefficient between (voxel) air and (macro) air (W/m2/K)
-  infl_macro <<- 32.5 #32.01 #      # Distance over which the influence of macro temp on air temp is reduced by 50% (m)
-  infl_soil <<- 5# 3.31 #          # Distance over which the influence of soil temp on air temp is reduced by 50% (m)
+  g_macro <<- 38.87# 25#          # Convective heat transfer coefficient between (voxel) air and (macro) air (W/m2/K)
+  infl_macro <<- 30#16.03 # 32.5 #      # Distance over which the influence of macro temp on air temp is reduced by 50% (m)
+  infl_soil <<- 3.05# 5#           # Distance over which the influence of soil temp on air temp is reduced by 50% (m)
   infl_forest <<- 5       # Distance over which the influence of forest temp on air temp is reduced by 50% (m)
 
   # parameters for sensible heat flux (H)

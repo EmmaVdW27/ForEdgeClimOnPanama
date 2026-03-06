@@ -21,3 +21,28 @@ de_dT <- function(temp, net_rad){
   return(dR_dT - dH_dT - dLE_dT)
 
 }
+
+
+#' Aangepaste afgeleide van de energiebalans voor Penman-Monteith
+#'
+#' @param temp Forest surface temperature (K)
+#' @param net_rad Net radiation (W/m2)
+#' @param den Voxel density (0-1)
+#' @param gs_base Stomatal conductance (m/s)
+#' @return Derivative of energy balance wrt surface temperature
+de_dT_PM <- function(temp, net_rad, den, gs_base = 0.005) {
+  T_c = temp - 273.15
+  dR_dT = -4 * e_forest * sigma_SB * temp^3
+  dH_dT = den * g_forest
+
+  # Vereenvoudigde maar stabiele dLE/dT
+  # We focussen op de dominante slope-verandering
+  s = 4098 * saturated_vapor_pressure(T_c) / (T_c + 237.3)^2
+  gamma_eff = 0.066 * (1 + g_forest / gs_base)
+
+  # De verandering in LE wordt 'gedempt' door de weerstand
+  dLE_dT = den * (s / (s + gamma_eff)) * dR_dT
+
+  # Voeg een kleine epsilon toe om deling door exact nul te voorkomen
+  return(dR_dT - dH_dT - dLE_dT - 1e-6)
+}

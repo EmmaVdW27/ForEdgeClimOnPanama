@@ -124,37 +124,8 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
     trace_list <- vector("list", max_iter)  # one entry per iteration
   }
 
+
   for (iter in 1:max_iter) {
-
-    # --------------------------------------------------
-    # Dynamic macro boundary, based on canopy temperature
-    # --------------------------------------------------
-
-    # keep original macro_temp
-    if (iter == 1) {
-      macro_temp_orig <- macro_temp
-    }
-
-    # Reset macro_temp every iteration towards original
-    macro_temp <- macro_temp_orig
-
-    # get top (5) layers per column
-    top5_per_col <- micro_grid |>
-      dplyr::filter(den > 0) |>
-      dplyr::group_by(x, y) |>
-      dplyr::arrange(desc(z), .by_group = TRUE) |>
-      dplyr::slice_head(n = 5) |>
-      dplyr::ungroup()
-
-    mean_top_temp <- mean(top5_per_col$temperature, na.rm = TRUE)
-
-    #print(mean_top_temp)
-
-    # proxy for macro-canopy decoupling
-    if (!is.na(mean_top_temp) && mean_top_temp < macro_temp) {
-      macro_temp <- mean_top_temp
-    }
-
 
     #################
     # NET RADIATION #
@@ -191,7 +162,6 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
     # AIR TO AIR HEAT DIFFUSION #
     #############################
 
-    #print('   D 💨')
     dt = 1 # diffusion step is 1, ie, the iteration step taken for temp convergence
     T_air_vec = T_air_vec - calculate_D(T_air_vec,micro_grid$T_ground)*dt/(Cp*V*rho)
 
@@ -207,8 +177,8 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
     # LATENT HEAT FLUX #
     ####################
 
-    latent_flux <- calculate_LE(micro_grid$temperature-273.15,net_radiation) # temp in calculate_LE must be in °C
-
+    #latent_flux <- calculate_LE(micro_grid$temperature-273.15,net_radiation) # temp in calculate_LE must be in °C
+    latent_flux <- calculate_LE_PM_C(micro_grid$temperature-273.15, T_air_vec-273.15, net_radiation, den)
 
     ##################
     # ENERGY BALANCE #
@@ -246,7 +216,8 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
     }
 
     # Use Newton's method to update surface temperature as is done in the SCOPE 2.0 model (Yang et al. 2021)
-    micro_grid$temperature <- micro_grid$temperature - ifelse(energy_balance_surf == 0, 0, W*energy_balance_surf/de_dT(micro_grid$temperature,net_radiation) )
+    #micro_grid$temperature <- micro_grid$temperature - ifelse(energy_balance_surf == 0, 0, W*energy_balance_surf/de_dT(micro_grid$temperature,net_radiation) )
+    micro_grid$temperature <- micro_grid$temperature - ifelse(energy_balance_surf == 0, 0, W*energy_balance_surf/de_dT_PM(micro_grid$temperature,net_radiation,den) )
 
     # Determine planes-averaged surface temperature (to be used in T_air_Vec update for zero-density voxels).
     micro_grid <- micro_grid |>
@@ -265,7 +236,6 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
 
     # Air temperature update based on a linearization as is done in microclimc (Maclean & Klinges, 2021).
     T_air_vec <- ( w_macro_z*g_macro * macro_temp + w_soil*g_soil * micro_grid$T_ground + ifelse(den == 0, w_forest*g_forest * micro_grid$mean_temp, w_forest*g_forest *micro_grid$temperature) )/ ( w_macro_z*g_macro + w_soil*g_soil + w_forest*g_forest)
-
 
   }
 

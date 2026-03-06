@@ -126,6 +126,7 @@ p <- dygraph(
 ) %>%
   dyRangeSelector() %>%
   dyOptions(
+    useDataTimezone = TRUE,
     drawPoints = FALSE,
     strokeWidth = 1.2
   ) %>%

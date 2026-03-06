@@ -98,6 +98,46 @@ saturated_vapor_pressure <- function(temp) {
   0.6108 * exp(17.27 * temp / (temp + 237.3)) # temp in °C, result in kPa
 }
 
+
+#' Bereken Latente Warmteflux (LE) via Penman-Monteith
+#'
+#' @param T_surf_C Oppervlaktetemperatuur (°C)
+#' @param T_air_C  Luchttemperatuur (°C)
+#' @param net_rad  Nettostraling (W/m2)
+#' @param RH       Relatieve luchtvochtigheid (%)
+#' @param den      Voxel densiteit (0-1)
+#' @param gs_base  Stomataire conductantie (m/s, bijv. 0.005)
+#' @return LE      Latent Heat Flux (W/m2)
+
+calculate_LE_PM_C <- function(T_surf_C, T_air_C, net_rad, den, RH = 90.35, gs_max = 0.005) {
+  gamma_psy <- 0.066
+  ga <- g_forest
+
+  # Alleen verdampen als er netto straling is (overdag)
+  # Dit voorkomt oscillaties rond het nulpunt 's nachts
+  eff_rad <- max(0, net_rad)
+
+  es_air <- 0.6108 * exp(17.27 * T_air_C / (T_air_C + 237.3))
+  ea <- es_air * (RH / 100)
+  VPD <- max(0, es_air - ea)
+
+  es_surf <- 0.6108 * exp(17.27 * T_surf_C / (T_surf_C + 237.3))
+  slope <- 4098 * es_surf / (T_surf_C + 237.3)^2
+
+  # Jarvis-stijl beperking: gs wordt kleiner als VPD stijgt
+  # f_vpd tussen 0 en 1. Als VPD > 1.5 kPa, knijpt de plant dicht.
+  f_vpd <- exp(-0.6 * VPD)
+  gs_eff <- gs_max * f_vpd
+  gs_eff <- max(0.0005, gs_eff) # Nooit helemaal 0
+
+  gamma_eff = gamma_psy * (1 + ga / gs_eff)
+
+  # Penman-Monteith
+  LE <- den * ((slope * eff_rad) + (rho * Cp * ga * VPD)) / (slope + gamma_eff)
+  LE <- pmin(LE, max(0, net_rad))
+  return(LE)
+}
+
 #' Function to calculate latent heat flux LE (~ evapotranspiration, ET: LE = L_v . ET with L_v = latent heat of vaporization of water (J/kg))
 #'
 #' @param temperature Forest surface temperature
