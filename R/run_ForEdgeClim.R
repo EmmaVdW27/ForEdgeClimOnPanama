@@ -45,6 +45,29 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
   y_dim <<- max(y_coords)  # Length in y-direction
   z_dim <<- max(z_coords)  # Length in z-direction
 
+
+  #-------------------------------------------
+
+
+  ###########################################
+  # CONDUCTANCES AND DISTANCES OF INFLUENCE #
+  ###########################################
+
+  u_eff = max(0.1, u_top) # u_top shouldn't be zero
+
+  g_forest <<- g_forest_ref / u_eff * wind_factor
+  g_soil   <<- g_soil_ref   / u_eff * wind_factor
+  g_macro  <<- g_macro_ref  * u_eff / wind_factor
+
+
+  infl_soil   <<- infl_soil_ref    / u_eff * wind_factor
+  infl_forest <<- infl_forest_ref  / u_eff * wind_factor
+  infl_macro  <<- infl_macro_ref   * u_eff / wind_factor
+
+
+  #-------------------------------------------
+
+
   #############################
   # INITIALIZING TEMPERATURES #
   #############################
@@ -151,20 +174,21 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
 
     # G is positive if E is entering the soil
     G = calculate_G(net_rad_ground)
-    micro_grid$T_soil = G*stable_soil_depth/k_soil + T_soil_deep # micro_grid$T_soil_deep
+    micro_grid$T_soil = G*stable_soil_depth/k_soil + T_soil_deep
     micro_grid <- micro_grid |>
       group_by(x, y) |>
       mutate(T_ground = T_soil[z == 1][1])  |>
       ungroup()
 
+    G_voxel <- rep(0, length(net_radiation))
+    G_voxel[z_coords == 1] <- G[z_coords == 1]
 
     #############################
     # AIR TO AIR HEAT DIFFUSION #
     #############################
 
-    dt = 1 # diffusion step is 1, ie, the iteration step taken for temp convergence
-    T_air_vec = T_air_vec - calculate_D(T_air_vec,micro_grid$T_ground)*dt/(Cp*V*rho)
-
+    dt <- 1
+    T_air_vec = T_air_vec - calculate_D(T_air_vec, micro_grid$T_ground) * dt / (Cp * V * rho)
 
     ######################
     # SENSIBLE HEAT FLUX #
@@ -177,31 +201,18 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
     # LATENT HEAT FLUX #
     ####################
 
-    #latent_flux <- calculate_LE(micro_grid$temperature-273.15,net_radiation) # temp in calculate_LE must be in °C
-    latent_flux <- calculate_LE_PM_C(micro_grid$temperature-273.15, T_air_vec-273.15, net_radiation, den)
+    #latent_flux <- calculate_LE(micro_grid$temperature-273.15,net_radiation, G_voxel) # temp in calculate_LE must be in °C
+    latent_flux_res <- calculate_LE_PM_C(micro_grid$temperature-273.15, T_air_vec-273.15, SW_down, net_radiation, G_voxel)
+    latent_flux <- latent_flux_res$LE
+
 
     ##################
     # ENERGY BALANCE #
     ##################
 
-    energy_balance_surf <- net_radiation - sensible_flux - latent_flux
+    energy_balance_surf <- den*net_radiation - sensible_flux - latent_flux
     error_current = max(abs(energy_balance_surf))
 
-    # ---- Optional trace logging for selected voxels ----
-    if (!is.null(trace_idx)) {
-      valid_idx <- trace_idx[trace_idx >= 1 & trace_idx <= nrow(micro_grid)]
-
-      trace_list[[iter]] <- data.frame(
-        iter = iter,
-        voxel_id = valid_idx,
-        x = micro_grid$x[valid_idx],
-        y = micro_grid$y[valid_idx],
-        z = micro_grid$z[valid_idx],
-        T_surface = micro_grid$temperature[valid_idx],
-        T_air     = T_air_vec[valid_idx],
-        E_residual = energy_balance_surf[valid_idx]
-      )
-    }
 
     # Check oscillations, if so, reduce W
     if (iter > 1 && error_current > error_prev) {
@@ -217,7 +228,7 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
 
     # Use Newton's method to update surface temperature as is done in the SCOPE 2.0 model (Yang et al. 2021)
     #micro_grid$temperature <- micro_grid$temperature - ifelse(energy_balance_surf == 0, 0, W*energy_balance_surf/de_dT(micro_grid$temperature,net_radiation) )
-    micro_grid$temperature <- micro_grid$temperature - ifelse(energy_balance_surf == 0, 0, W*energy_balance_surf/de_dT_PM(micro_grid$temperature,net_radiation,den) )
+    micro_grid$temperature <- micro_grid$temperature - ifelse(energy_balance_surf == 0, 0, W*energy_balance_surf/de_dT_PM(micro_grid$temperature, T_air_vec, net_radiation, G_voxel, latent_flux_res$gamma_eff) )
 
     # Determine planes-averaged surface temperature (to be used in T_air_Vec update for zero-density voxels).
     micro_grid <- micro_grid |>
@@ -239,12 +250,9 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
 
   }
 
-  if (!is.null(trace_idx)) {
-    trace_df <- dplyr::bind_rows(trace_list)
-  } else {
-    trace_df <- NULL
-  }
-
+  ###########
+  # RESULTS #
+  ###########
 
   res <- list(
     sw_rad = final_results, # SW RTM output
@@ -254,8 +262,7 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
     net_radiation = net_radiation,
     sensible_flux = sensible_flux,
     latent_flux = latent_flux,
-    ground_flux = G,
-    newton_trace = trace_df
+    ground_flux = G
   )
 
   return(res)

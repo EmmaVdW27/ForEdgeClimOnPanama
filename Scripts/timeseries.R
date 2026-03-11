@@ -33,7 +33,7 @@ plotnr = "R11" # C13 or R11
 
 params = list(
   # Calibrated parameters (HEAT)
-  infl_macro = 32.01, g_macro = 38.88, infl_soil = 3.31,
+  #infl_macro = 32.01, g_macro = 38.88, infl_soil = 3.31,
   # C13: infl_macro = 16.03, g_macro = 38.87, infl_soil = 3.05,
   # R11: infl_macro = 32.01, g_macro = 38.88, infl_soil = 3.31,
   # uncalibrated, fixed values: infl_macro = 32.5, g_macro = 25, infl_soil = 5,
@@ -44,7 +44,23 @@ params = list(
   # Fixed parameters (LW RTM)
   e_forest = 0.965, beta_lw = 0.325, omega_lw = 0.035, Kd_lw_v = 0.3, omega_g_lw_v = 0.055, Kd_lw_h = 0.3, omega_g_lw_h = 0.035,
   # Fixed parameters (HEAT)
-  h = 10, infl_forest = 5, g_forest = 12.5, p_ground = 0.225, g_soil = 10, k_soil = 1.225
+  h = 10, p_ground = 0.225, k_soil = 1.225,
+
+    # g and i
+  g_macro_ref = 25,
+  g_forest_ref = 12.5,
+  g_soil_ref = 10,
+  infl_macro_ref = 32.5,
+  infl_soil_ref = 5,
+  infl_forest_ref = 5,
+
+    # PM LE parameters
+  gs_max = 0.05,
+  stomata_closure = 0.6,
+
+    # g(u) and i(u) parameter
+  wind_factor = 3.5 # 5.5/10+
+
 )
 
 ## timeseries
@@ -90,6 +106,7 @@ parts <- future_lapply(
       # ---- Imports ----
       import_temp_observations(datetime)
       import_rad_observations(datetime)
+      import_RH_u_observations(datetime)
 
       # ---- Model run ----
       grid_local <- voxel_TLS$grid

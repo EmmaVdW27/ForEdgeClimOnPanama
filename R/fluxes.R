@@ -7,7 +7,7 @@
 # G is positive if E is entering the soil
 # More dense voxels lose less heat to ground
 calculate_G <- function(net_rad_ground){
-  G = p_ground*(1-den)*net_rad_ground
+  G = p_ground*net_rad_ground *(1-den)
   return(G)
 }
 
@@ -82,7 +82,7 @@ calculate_H <- function(T_surf,T_air){
   # H is simulated via 'convective conductance' where g functions as an effective conductance that accounts for
   # both conduction within the boundary layer and convection around it.
   # H is positive when energy is lost from the surface to the air.
-  H = den * g_forest * (T_surf - T_air)
+  H = g_forest * (T_surf - T_air) *den
 
   return(H)
 
@@ -99,59 +99,65 @@ saturated_vapor_pressure <- function(temp) {
 }
 
 
-#' Bereken Latente Warmteflux (LE) via Penman-Monteith
+#' Function to calcualte latent heat flux (LE) via Penman-Monteith
 #'
-#' @param T_surf_C Oppervlaktetemperatuur (°C)
-#' @param T_air_C  Luchttemperatuur (°C)
-#' @param net_rad  Nettostraling (W/m2)
-#' @param RH       Relatieve luchtvochtigheid (%)
-#' @param den      Voxel densiteit (0-1)
-#' @param gs_base  Stomataire conductantie (m/s, bijv. 0.005)
-#' @return LE      Latent Heat Flux (W/m2)
-
-calculate_LE_PM_C <- function(T_surf_C, T_air_C, net_rad, den, RH = 90.35, gs_max = 0.005) {
-  gamma_psy <- 0.066
+#' @param T_surf_C Forest surface temperature (°C)
+#' @param T_air_C  Air temperature (°C)
+#' @param SW_down  Downward shortwave radiation (W/m2)
+#' @param net_rad  Net radiation (W/m2)
+#' @param den      Voxel density (0-1)
+#' @param RH       Relative humidity (%)
+#' @return LE      Latent heat flux (W/m2)
+#'
+calculate_LE_PM_C <- function(T_surf_C, T_air_C, SW_down, net_rad, G) {
   ga <- g_forest
 
-  # Alleen verdampen als er netto straling is (overdag)
-  # Dit voorkomt oscillaties rond het nulpunt 's nachts
-  eff_rad <- max(0, net_rad)
+  # saturation vapour pressure
+  es_leaf <- saturated_vapor_pressure(T_surf_C)
+  ea <- saturated_vapor_pressure(T_air_C) * (RH / 100)
+  VPD <- pmax(0, es_leaf - ea)
 
-  es_air <- 0.6108 * exp(17.27 * T_air_C / (T_air_C + 237.3))
-  ea <- es_air * (RH / 100)
-  VPD <- max(0, es_air - ea)
+  slope <- 4098 * es_leaf / (T_surf_C + 237.3)^2
 
-  es_surf <- 0.6108 * exp(17.27 * T_surf_C / (T_surf_C + 237.3))
-  slope <- 4098 * es_surf / (T_surf_C + 237.3)^2
+  # Jarvis style stomatal conductance
+  # light response: stomata close at low PAR
+  PAR <- 0.45 * SW_down
+  f_light <- PAR / (PAR + 100)
+  # VPD response: stomata close at high VPD
+  f_vpd <- exp(-stomata_closure * VPD)
 
-  # Jarvis-stijl beperking: gs wordt kleiner als VPD stijgt
-  # f_vpd tussen 0 en 1. Als VPD > 1.5 kPa, knijpt de plant dicht.
-  f_vpd <- exp(-0.6 * VPD)
-  gs_eff <- gs_max * f_vpd
-  gs_eff <- max(0.0005, gs_eff) # Nooit helemaal 0
+  gs_eff <- gs_max * f_light * f_vpd
+  gs_eff <- pmax(0.0001, gs_eff) # never completely 0
 
+  # core of PM: extra resistance of leaf
   gamma_eff = gamma_psy * (1 + ga / gs_eff)
 
-  # Penman-Monteith
-  LE <- den * ((slope * eff_rad) + (rho * Cp * ga * VPD)) / (slope + gamma_eff)
-  LE <- pmin(LE, max(0, net_rad))
-  return(LE)
+  # Penman-Monteith equation
+  # LE can be negative: condensation/dew
+  LE <- ( ((slope * (net_rad - G)) + (rho * Cp * ga * VPD)) / (slope + gamma_eff) ) *den
+
+  return(list(LE = LE, gamma_eff = gamma_eff))
 }
 
-#' Function to calculate latent heat flux LE (~ evapotranspiration, ET: LE = L_v . ET with L_v = latent heat of vaporization of water (J/kg))
+#' Function to calculate latent heat flux LE via Priestley-Taylor approximation
+#' (~ evapotranspiration, ET: LE = L_v . ET with L_v = latent heat of vaporization of water (J/kg))
 #'
 #' @param temperature Forest surface temperature
 #' @param net_rad Net radiation
 #' @return LE Latent heat flux
 #' @export
 #'
-calculate_LE <- function(temperature, net_rad) {
+calculate_LE <- function(temperature, net_rad, G) {
   # slope of the saturation pressure curve; temp in °C; slope in kPa/K = kPa/°C
   slope = 4098 * saturated_vapor_pressure(temperature) / (temperature + 237.3)^2
   # Latent heat flux by the empirical method of Priestly-Taylor
-  LE = den * alpha_PT * (net_rad) * slope / (slope + gamma_psy)
+  LE = den * alpha_PT * (net_rad - G) * slope / (slope + gamma_psy)
   # LE cannot be negative
   LE[LE<0] = 0
 
   return(LE) # LE in W/m²
 }
+
+
+
+

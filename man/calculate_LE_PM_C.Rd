@@ -2,26 +2,26 @@
 % Please edit documentation in R/fluxes.R
 \name{calculate_LE_PM_C}
 \alias{calculate_LE_PM_C}
-\title{Bereken Latente Warmteflux (LE) via Penman-Monteith}
+\title{Function to calcualte latent heat flux (LE) via Penman-Monteith}
 \usage{
-calculate_LE_PM_C(T_surf_C, T_air_C, net_rad, den, RH = 90.35, gs_max = 0.005)
+calculate_LE_PM_C(T_surf_C, T_air_C, SW_down, net_rad, G)
 }
 \arguments{
-\item{T_surf_C}{Oppervlaktetemperatuur (°C)}
+\item{T_surf_C}{Forest surface temperature (°C)}
 
-\item{T_air_C}{Luchttemperatuur (°C)}
+\item{T_air_C}{Air temperature (°C)}
 
-\item{net_rad}{Nettostraling (W/m2)}
+\item{SW_down}{Downward shortwave radiation (W/m2)}
 
-\item{den}{Voxel densiteit (0-1)}
+\item{net_rad}{Net radiation (W/m2)}
 
-\item{RH}{Relatieve luchtvochtigheid (\%)}
+\item{den}{Voxel density (0-1)}
 
-\item{gs_base}{Stomataire conductantie (m/s, bijv. 0.005)}
+\item{RH}{Relative humidity (\%)}
 }
 \value{
-LE      Latent Heat Flux (W/m2)
+LE      Latent heat flux (W/m2)
 }
 \description{
-Bereken Latente Warmteflux (LE) via Penman-Monteith
+Function to calcualte latent heat flux (LE) via Penman-Monteith
 }

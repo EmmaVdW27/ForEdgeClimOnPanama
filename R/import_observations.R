@@ -8,60 +8,6 @@
 #' @export
 import_temp_observations <- function(time){
 
-  # -----------------------------
-  # MACROTEMPERATURE from clearing or Lutz
-  # -----------------------------
-
-  # macro_temp_input <- read_csv(macro_input_file_csv, show_col_types = FALSE)
-  # macro_temp_input$datetime_est <- dmy_hms(macro_temp_input$datetime, tz = "EST") # datetime is character string with time in EST = UTC-5 (no summer or winter time)
-  #
-  # macro_temp_input$datetime_utc <- with_tz(macro_temp_input$datetime_est, tzone = "UTC") # convert to UTC
-  #
-  # macro_hourly <- macro_temp_input |> # hourly averages
-  #   mutate(datetime_hour = floor_date(datetime_utc, "hour")) |>
-  #   group_by(datetime_hour) |>
-  #   summarise(at_hour = mean(at, na.rm = TRUE),
-  #             .groups = "drop")
-  #
-  # macro_temp <<- macro_hourly$at_hour[macro_hourly$datetime_hour == time] + 273.15 # specific hour and °C to K
-
-  # # -----------------------------
-  # # MACROTEMPERATURE from AVA tower 48 m
-  # # -----------------------------
-  #
-  # T_48m <- mean(temp_input_file$temp_macro, na.rm = TRUE)  # in °C
-  #
-  # hour_now <- as.numeric(format(time, "%H"))
-  #
-  # # Define sunset and sunrise (local time assumption -> -5)
-  # sunset  <- 23
-  # sunrise <- 11
-  #
-  # # Maximum nocturnal difference (°C)
-  # deltaT_max <- 2
-  # k <- 0.7  # stabilisation rate
-  #
-  # if(hour_now >= sunset | hour_now < sunrise){
-  #
-  #   # Compute hours since sunset
-  #   if(hour_now >= sunset){
-  #     t_since_sunset <- hour_now - sunset
-  #   } else {
-  #     t_since_sunset <- (24 - sunset) + hour_now
-  #   }
-  #
-  #   # Exponential growth of nocturnal stratification
-  #   deltaT <- deltaT_max * (1 - exp(-k * t_since_sunset))
-  #
-  # } else {
-  #
-  #   deltaT <- 0
-  #
-  # }
-  #
-  # # Canopy-top macro temperature (35 m)
-  # macro_temp <<- (T_48m - deltaT) + 273.15  # convert to Kelvin
-
   # mutate data set
   temp_input_file <- temp_input_file_rds |>
     mutate(datetime_UTC_hour = floor_date(datetime, unit = "hour")) # datetime_UTC, floor the datetimes
@@ -157,4 +103,41 @@ import_rad_observations <- function(datetime){
 
 }
 
+#' Function to import relative humidity and wind speed observations from BCI stations: Lutz tower and clearing
+#'
+#' @param datetime yyyy-mm-dd hh:mm:ss in UTC
+#' @return RH relative humidity
+#' @return u_top wind speed above canopy
+#' @importFrom lubridate floor_date with_tz dmy_hms mdy_hms
+#' @importFrom dplyr mutate
+#' @importFrom readr read_csv
+#' @export
+import_RH_u_observations <- function(time){
 
+  # read files
+  RH_input <- read_csv(RH_input_file_csv, show_col_types = FALSE)
+  u_input <- read_csv(u_input_file_csv, show_col_types = FALSE)
+
+  # mutate RH file
+  RH_input$datetime_est <- dmy_hms(RH_input$datetime, tz = "EST") # datetime is character string with time in EST = UTC-5 (no summer or winter time)
+  RH_input$datetime_utc <- with_tz(RH_input$datetime_est, tzone = "UTC") # convert to UTC
+  RH_hourly <- RH_input |> # hourly averages
+    mutate(datetime_hour = floor_date(datetime_utc, "hour")) |>
+    group_by(datetime_hour) |>
+    summarise(rh_hour = mean(rh, na.rm = TRUE),
+              .groups = "drop")
+
+  # mutate u file
+  u_input$datetime_est <- mdy_hms(u_input$datetime, tz = "EST") # datetime is character string with time in EST = UTC-5 (no summer or winter time)
+  u_input$datetime_utc <- with_tz(u_input$datetime_est, tzone = "UTC") # convert to UTC
+  u_hourly <- u_input |> # hourly averages
+    mutate(datetime_hour = floor_date(datetime_utc, "hour")) |>
+    group_by(datetime_hour) |>
+    summarise(u_hour = mean(ws, na.rm = TRUE),
+              .groups = "drop")
+
+  # return values
+  RH <<- RH_hourly$rh_hour[RH_hourly$datetime_hour == time]
+  u_top <<- u_hourly$u_hour[u_hourly$datetime_hour == time]
+
+}

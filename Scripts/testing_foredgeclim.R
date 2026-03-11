@@ -17,8 +17,8 @@ start_script = Sys.time()
 #########
 plotnr <- "C13" # C13 or R11
 
-start_time <- as.POSIXct("2023-08-12 19:00:00", tz = "UTC") # first hour you want to run the model for
-end_time <- as.POSIXct("2023-08-12 19:00:00", tz = "UTC")   # last hour you want to run the model for
+start_time <- as.POSIXct("2023-08-14 07:00:00", tz = "UTC") # first hour you want to run the model for
+end_time <- start_time   # last hour you want to run the model for
 datetime_series <- seq(start_time, end_time, by = "hour")   # ForEdgeClim is run for all the hours between the first and last hour
 
 #########
@@ -43,6 +43,7 @@ for (current_datetime in datetime_series) {
   # Make sure the current datetime is a POSIXct object
   current_datetime <- as.POSIXct(current_datetime, origin = "1970-01-01", tz = "UTC")
   cat(paste0('Running model for plot ', plotnr, ' at ', current_datetime, ' UTC...\n'))
+  cat("\n")
 
   #################################################
   # INPUT DRIVERS, CONSTANTS AND MODEL PARAMETERS #
@@ -66,6 +67,7 @@ for (current_datetime in datetime_series) {
   # Import observations as input variables and as variables to compare the model with
   import_temp_observations(current_datetime)
   import_rad_observations(current_datetime)
+  import_RH_u_observations(current_datetime)
 
   #######################
   # CREATION OF 3D GRID #
@@ -131,9 +133,22 @@ for (current_datetime in datetime_series) {
   # ---- Calculate mean temperatures ----
   mean_model <- mean(TOMST$temperature_model, na.rm = TRUE)
   mean_obs   <- mean(TOMST$value_mean, na.rm = TRUE)
+  cat("\n")
 
   cat("Mean model temperature:", round(mean_model, 2), "°C\n")
   cat("Mean observed temperature:", round(mean_obs, 2), "°C\n")
+  cat("\n")
+
+  cat("g_forest:", round(g_forest, 2), "W/m2/K\n")
+  cat("g_soil:", round(g_soil, 2), "W/m2/K\n")
+  cat("g_macro:", round(g_macro, 2), "W/m2/K\n")
+  cat("\n")
+
+  cat("infl_forest:", round(infl_forest, 2), "m\n")
+  cat("infl_soil:", round(infl_soil, 2), "m\n")
+  cat("infl_macro:", round(infl_macro, 2), "m\n")
+  cat("\n")
+
 
   #--------------------------
 

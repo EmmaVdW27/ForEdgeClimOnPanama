@@ -80,6 +80,7 @@ lw_two_stream <- function(soil_reflect, density, F_sky_lw, temperature, T_soil, 
   y[idx_even] <- black[idx_next] - black[indices]
   y[idx_even + 1] <- black[idx_next] - black[indices]
 
+
   # Solving matrix equation using arma::solve from C++
   x <- solve_rtm(S, y)
 
@@ -125,6 +126,8 @@ lw_two_stream <- function(soil_reflect, density, F_sky_lw, temperature, T_soil, 
   return(result)
 
 }
+
+
 
 #' 1D (vertical) longwave two-stream RTM
 #'

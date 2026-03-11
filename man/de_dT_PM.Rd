@@ -2,9 +2,9 @@
 % Please edit documentation in R/energy_balance.R
 \name{de_dT_PM}
 \alias{de_dT_PM}
-\title{Aangepaste afgeleide van de energiebalans voor Penman-Monteith}
+\title{Function to calculate the derivative of the energy balance closure error to surface temperature with PM LE}
 \usage{
-de_dT_PM(temp, net_rad, den, gs_base = 0.005)
+de_dT_PM(temp, T_air_K, net_rad, G, gamma_eff)
 }
 \arguments{
 \item{temp}{Forest surface temperature (K)}
@@ -12,12 +12,10 @@ de_dT_PM(temp, net_rad, den, gs_base = 0.005)
 \item{net_rad}{Net radiation (W/m2)}
 
 \item{den}{Voxel density (0-1)}
-
-\item{gs_base}{Stomatal conductance (m/s)}
 }
 \value{
 Derivative of energy balance wrt surface temperature
 }
 \description{
-Aangepaste afgeleide van de energiebalans voor Penman-Monteith
+Function to calculate the derivative of the energy balance closure error to surface temperature with PM LE
 }
