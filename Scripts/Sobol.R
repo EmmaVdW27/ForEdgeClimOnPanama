@@ -29,8 +29,8 @@ plotnr = "C13" # C13 or R11
 
 # dry season noon: 2023-04-26 19:00:00
 # dry season night: 2023-04-26 07:00:00
-# wet season noon: 2023-11-26 19:00:00
-# wet season night: 2023-11-26 07:00:00
+# wet season noon: 2023-10-26 19:00:00
+# wet season night: 2023-10-26 07:00:00
 datehour = "2023-04-26 19:00:00" # in UTC not LC!
 
 #########
@@ -61,17 +61,20 @@ param_ranges <- data.frame(
   parameter = c(
     "betad", "beta0", "omega", "Kd_v", "Kb_v", "omega_g_v",
     "e_forest", "beta_lw", "omega_lw", "Kd_lw_v", "omega_g_lw_v",
-    "h", "g_macro", "infl_macro", "infl_soil", "infl_forest", "g_forest", "p_ground", "g_soil", "k_soil"
+    "h", "g_macro_ref", "infl_macro_ref", "infl_soil_ref", "infl_forest_ref", "g_forest_ref", "p_ground", "g_soil", "k_soil",
+    "gs_max", "stomata_closure", "wind_factor"
   ),
   min = c(
     0.3, 0.2, 0.43, 0.6, 0.5, 0.08,
     0.94, 0.3, 0.01, 0.2, 0.04,
-    0, 10, 5, 0, 0, 5, 0.1, 5, 0.25
+    0, 10, 5, 0, 0, 5, 0.1, 5, 0.25,
+    0.2, 0.3, 0.5
   ),
   max = c(
     0.35, 0.45, 0.61, 0.95, 2, 0.18,
     0.99, 0.35, 0.06, 0.4, 0.07,
-    20, 40, 60, 10, 10, 20, 0.35, 15, 2.2
+    20, 40, 60, 10, 10, 20, 0.35, 15, 2.2,
+    0.8, 1.2, 10
   ),
   stringsAsFactors = FALSE
 )
@@ -119,6 +122,7 @@ model_function <- function(param_values) {
 
   import_temp_observations(datetime)
   import_rad_observations(datetime)
+  import_RH_u_observations(datetime)
 
   voxel_TLS <- readRDS(structure)
   voxel_TLS$grid$density = voxel_TLS$grid$density * structure_PAI_scaling_factor

@@ -10,7 +10,7 @@ create_input_drivers <- function() {
   rad_input_file_csv <<- "Data/Table_CNR1_2023.dat"
   sensor_locations <<- read_excel("Data/sensor_locations_all_plots.xlsx")
   RH_input_file_csv <<- "Data/bci_cl_rh_elect.csv"
-  u_input_file_csv <<- "Data/bci_lutz48m_ws_elect.csv"
+  u_input_file_csv <<- "Data/bci_ava_ws_elect.csv"
 
   # plot parameters
   req_height <<- 1

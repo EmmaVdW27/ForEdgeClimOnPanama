@@ -86,12 +86,14 @@ for(plotnr in plots){
     param_order <- c(
       "betad", "beta0", "omega", "Kd_v", "Kb_v", "omega_g_v",
       "e_forest", "beta_lw", "omega_lw", "Kd_lw_v", "omega_g_lw_v",
-      "h", "g_macro", "infl_macro", "infl_soil", "infl_forest", "g_forest", "p_ground", "g_soil", "k_soil"
+      "h", "g_macro_ref", "infl_macro_ref", "infl_soil_ref", "infl_forest_ref", "g_forest_ref", "p_ground", "g_soil", "k_soil",
+      "gs_max", "stomata_closure", "wind_factor"
     )
     # Focused parameter sequence in order from most influential to least influential (to be plot in this order)
-    focus_params <- c("infl_macro", "infl_soil", "g_macro",
-                      "g_soil", "infl_forest", "k_soil",
-                       "h", "p_ground", "g_forest")
+    focus_params <- c("infl_macro_ref", "infl_soil_ref", "g_macro_ref",
+                      "g_soil_ref", "infl_forest_ref", "k_soil",
+                       "h", "p_ground", "g_forest_ref",
+                      "gs_max", "stomata_closure", "wind_factor")
     # Shortwave parameter sequence
     SW_params <- c("betad", "beta0", "omega", "Kd_v", "Kb_v", "omega_g_v")
     # Longwave parameter sequence
@@ -106,7 +108,10 @@ for(plotnr in plots){
       "#D62828",  # red
       "#6A040F",  # very dark red
       "#A4161A",  # dark red
-      "#E98B1E"   # deep orange
+      "#E98B1E",   # deep orange
+      "purple",
+      "purple3",
+      "purple4"
     )
 
 
@@ -120,15 +125,18 @@ for(plotnr in plots){
 
     # legend labels
     labels_expr <- c(
-      infl_macro  = expression(italic(i)[m]),
-      infl_soil   = expression(italic(i)[s]),
+      infl_macro_ref  = expression(italic(i)[m]),
+      infl_soil_ref   = expression(italic(i)[s]),
       k_soil      = expression(italic(k)[s]),
-      g_macro     = expression(italic(g)[m]),
-      infl_forest = expression(italic(i)[f]),
-      g_soil      = expression(italic(g)[s]),
+      g_macro_ref     = expression(italic(g)[m]),
+      infl_forest_ref = expression(italic(i)[f]),
+      g_soil_ref      = expression(italic(g)[s]),
       h           = expression(italic(h)),
       p_ground    = expression(italic(p)),
-      g_forest    = expression(italic(g)[f]),
+      g_forest_ref    = expression(italic(g)[f]),
+      gs_max    = expression(italic(gs)[max]),
+      stomata_closure     = expression(italic(s)[c]),
+      wind_factor     = expression(italic(w)[f]),
       `SW parameters` = "SW parameters",
       `LW parameters` = "LW parameters"
     )

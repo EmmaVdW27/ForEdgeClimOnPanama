@@ -108,7 +108,7 @@ import_rad_observations <- function(datetime){
 #' @param datetime yyyy-mm-dd hh:mm:ss in UTC
 #' @return RH relative humidity
 #' @return u_top wind speed above canopy
-#' @importFrom lubridate floor_date with_tz dmy_hms mdy_hms
+#' @importFrom lubridate floor_date with_tz dmy_hms
 #' @importFrom dplyr mutate
 #' @importFrom readr read_csv
 #' @export
@@ -128,7 +128,7 @@ import_RH_u_observations <- function(time){
               .groups = "drop")
 
   # mutate u file
-  u_input$datetime_est <- mdy_hms(u_input$datetime, tz = "EST") # datetime is character string with time in EST = UTC-5 (no summer or winter time)
+  u_input$datetime_est <- dmy_hms(u_input$datetime, tz = "EST") # datetime is character string with time in EST = UTC-5 (no summer or winter time)
   u_input$datetime_utc <- with_tz(u_input$datetime_est, tzone = "UTC") # convert to UTC
   u_hourly <- u_input |> # hourly averages
     mutate(datetime_hour = floor_date(datetime_utc, "hour")) |>
