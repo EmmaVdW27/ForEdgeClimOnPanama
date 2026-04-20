@@ -29,8 +29,8 @@ plotnr = "C13" # C13 or R11
 
 # dry season noon: 2023-04-26 19:00:00
 # dry season night: 2023-04-26 07:00:00
-# wet season noon: 2023-10-26 19:00:00
-# wet season night: 2023-10-26 07:00:00
+# wet season noon: 2023-11-26 19:00:00
+# wet season night: 2023-11-26 07:00:00
 datehour = "2023-04-26 19:00:00" # in UTC not LC!
 
 #########
@@ -61,7 +61,7 @@ param_ranges <- data.frame(
   parameter = c(
     "betad", "beta0", "omega", "Kd_v", "Kb_v", "omega_g_v",
     "e_forest", "beta_lw", "omega_lw", "Kd_lw_v", "omega_g_lw_v",
-    "h", "g_macro_ref", "infl_macro_ref", "infl_soil_ref", "infl_forest_ref", "g_forest_ref", "p_ground", "g_soil", "k_soil",
+    "h", "g_macro_ref", "infl_macro_ref", "infl_soil_ref", "infl_forest_ref", "g_forest_ref", "p_ground", "g_soil_ref", "k_soil",
     "gs_max", "stomata_closure", "wind_factor"
   ),
   min = c(

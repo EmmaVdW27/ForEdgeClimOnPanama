@@ -33,10 +33,10 @@ plotnr = "R11" # C13 or R11
 
 params = list(
   # Calibrated parameters (HEAT)
-  #infl_macro = 32.01, g_macro = 38.88, infl_soil = 3.31,
-  # C13: infl_macro = 16.03, g_macro = 38.87, infl_soil = 3.05,
-  # R11: infl_macro = 32.01, g_macro = 38.88, infl_soil = 3.31,
-  # uncalibrated, fixed values: infl_macro = 32.5, g_macro = 25, infl_soil = 5,
+  wind_factor = 5.5, infl_macro_ref = 32.5, infl_soil_ref = 5,
+  # C13: wind_factor = 7.19, infl_macro_ref = 59.9, infl_soil_ref = 9.88,
+  # R11: wind_factor = 5.55, infl_macro_ref = 57.98, infl_soil_ref = 9.55,
+  # uncalibrated, fixed values: wind_factor = 5.5, infl_macro_ref = 32.5, infl_soil_ref = 5,
 
   # Fixed parameters (SW RTM)
   betad = 0.325, beta0 = 0.325, omega = 0.52, Kd_v = 0.775, Kb_v = 1.25, omega_g_v = 0.13,
@@ -50,16 +50,12 @@ params = list(
   g_macro_ref = 25,
   g_forest_ref = 12.5,
   g_soil_ref = 10,
-  infl_macro_ref = 32.5,
-  infl_soil_ref = 5,
   infl_forest_ref = 5,
 
     # PM LE parameters
-  gs_max = 0.05,
-  stomata_closure = 0.6,
+  gs_max = 0.5,
+  stomata_closure = 0.75
 
-    # g(u) and i(u) parameter
-  wind_factor = 3.5 # 5.5/10+
 
 )
 
@@ -67,7 +63,7 @@ params = list(
 all_datetimes <- c(
   seq(
     from = as.POSIXct("2023-01-01 00:00:00", tz = "UTC"),
-    to   = as.POSIXct("2023-10-31 23:00:00", tz = "UTC"),
+    to   = as.POSIXct("2023-12-31 23:00:00", tz = "UTC"),
     by   = "hour"
   )
 )

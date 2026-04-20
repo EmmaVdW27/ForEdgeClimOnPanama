@@ -53,17 +53,102 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
   # CONDUCTANCES AND DISTANCES OF INFLUENCE #
   ###########################################
 
-  u_eff = max(0.1, u_top) # u_top shouldn't be zero
+  # u_eff = max(0.1, u_top) # u_top shouldn't be zero
+  #
+  # g_forest <<- g_forest_ref / u_eff * wind_factor
+  # g_soil   <<- g_soil_ref   / u_eff * wind_factor
+  # g_macro  <<- g_macro_ref  * u_eff / wind_factor
+  #
+  #
+  infl_soil   <<- infl_soil_ref   # / u_eff * wind_factor
+  infl_forest <<- infl_forest_ref # / u_eff * wind_factor
+  infl_macro  <<- infl_macro_ref  # * u_eff / wind_factor
 
-  g_forest <<- g_forest_ref / u_eff * wind_factor
-  g_soil   <<- g_soil_ref   / u_eff * wind_factor
-  g_macro  <<- g_macro_ref  * u_eff / wind_factor
+  ###########################################
+  # WIND MODULE                             #
+  ###########################################
 
+  u_top_ms <- u_top / 3.6 # conversion from km/h to m/s
 
-  infl_soil   <<- infl_soil_ref    / u_eff * wind_factor
-  infl_forest <<- infl_forest_ref  / u_eff * wind_factor
-  infl_macro  <<- infl_macro_ref   * u_eff / wind_factor
+  u <- rep(NA, length(den))
 
+  xy_unique <- unique(data.frame(x = x_coords, y = y_coords))
+
+  for (i in 1:nrow(xy_unique)) {
+
+    x_val <- xy_unique$x[i]
+    y_val <- xy_unique$y[i]
+
+    idx <- which(x_coords == x_val & y_coords == y_val)
+
+    # sort hight to low
+    idx_sorted <- idx[order(z_coords[idx], decreasing = TRUE)]
+
+    z_col <- z_coords[idx_sorted]
+    den_col <- den[idx_sorted]
+    den_col[is.na(den_col)] <- 0
+
+    # canopy top = first voxel with structure
+    canopy_idx <- which(den_col > 0)[1]
+
+    if (is.na(canopy_idx)) {
+      # no forest = u_top everywhere
+      u[idx_sorted] <- u_top_ms
+      next
+    }
+
+    # LAI from canopy downward
+    LAI_cum <- rep(0, length(idx_sorted))
+
+    for (j in canopy_idx:length(idx_sorted)) {
+      if (j == canopy_idx) {
+        LAI_cum[j] <- den_col[j]
+      } else {
+        LAI_cum[j] <- LAI_cum[j-1] + den_col[j]
+      }
+    }
+
+    for (j in 1:length(idx_sorted)) {
+
+      if (j < canopy_idx) {
+        # above canopy
+        u[idx_sorted[j]] <- u_top_ms
+
+      } else {
+        # below canopy
+        u_val <- u_top_ms * exp(-k_u * LAI_cum[j])
+        u[idx_sorted[j]] <- max(u_val, 0.2) # 0.2 m/s is set as minimum wind speed
+      }
+    }
+  }
+
+  ###########################################
+  # CONDUCTANCES                            #
+  ###########################################
+
+  g_wind <- pmax(0.1, sqrt(u / u_ref))
+
+  g_forest <<- g_forest_ref * g_wind
+  g_macro  <<- g_macro_ref  * g_wind
+
+  # no wind dependence for soil conductance
+  g_soil   <<- g_soil_ref
+
+  ###########################################
+  # PLOT (vertical profile)                #
+  ###########################################
+
+  # # mid column
+  # mid_x <- round(mean(x_coords))
+  # mid_y <- round(mean(y_coords))
+  #
+  # idx <- which(x_coords == mid_x & y_coords == mid_y)
+  # idx_sorted <- idx[order(z_coords[idx])]
+  #
+  # p = plot(u[idx_sorted], z_coords[idx_sorted], type = "l",
+  #      xlab = "Wind speed (m/s)", ylab = "Height (m)",
+  #      main = "Vertical wind profile")
+  # print(p)
 
   #-------------------------------------------
 
@@ -210,7 +295,7 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
     # ENERGY BALANCE #
     ##################
 
-    energy_balance_surf <- den*net_radiation - sensible_flux - latent_flux
+    energy_balance_surf <- net_radiation - sensible_flux - latent_flux
     error_current = max(abs(energy_balance_surf))
 
 

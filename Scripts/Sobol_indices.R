@@ -52,30 +52,30 @@ for(plotnr in plots){
       ~file, ~label,
       ## Dry season
       ### Noon
-      glue("400samples_20parameters_19h_26042023_{plotnr}_avT{temp_type}.rds"),     glue("Dr_No_≈T{temp_type}"),
-      glue("400samples_20parameters_19h_26042023_{plotnr}_SDT{temp_type}.rds"),     glue("Dr_No_σT{temp_type}"),
-      glue("400samples_20parameters_19h_26042023_{plotnr}_avT{temp_type}_v.rds"),     glue("Dr_No_≈T{temp_type}_v"),
-      glue("400samples_20parameters_19h_26042023_{plotnr}_SDT{temp_type}_v.rds"),     glue("Dr_No_σT{temp_type}_v"),
-      glue("400samples_20parameters_19h_26042023_{plotnr}_gradT{temp_type}_v.rds"),   glue("Dr_No_∇T{temp_type}_v"),
+      glue("400samples_23parameters_19h_26042023_{plotnr}_avT{temp_type}.rds"),     glue("Dr_No_≈T{temp_type}"),
+      glue("400samples_23parameters_19h_26042023_{plotnr}_SDT{temp_type}.rds"),     glue("Dr_No_σT{temp_type}"),
+      glue("400samples_23parameters_19h_26042023_{plotnr}_avT{temp_type}_v.rds"),     glue("Dr_No_≈T{temp_type}_v"),
+      glue("400samples_23parameters_19h_26042023_{plotnr}_SDT{temp_type}_v.rds"),     glue("Dr_No_σT{temp_type}_v"),
+      glue("400samples_23parameters_19h_26042023_{plotnr}_gradT{temp_type}_v.rds"),   glue("Dr_No_∇T{temp_type}_v"),
       ### Night
-      glue("400samples_20parameters_07h_26042023_{plotnr}_avT{temp_type}.rds"),     glue("Dr_Ni_≈T{temp_type}"),
-      glue("400samples_20parameters_07h_26042023_{plotnr}_SDT{temp_type}.rds"),     glue("Dr_Ni_σT{temp_type}"),
-      glue("400samples_20parameters_07h_26042023_{plotnr}_avT{temp_type}_v.rds"),     glue("Dr_Ni_≈T{temp_type}_v"),
-      glue("400samples_20parameters_07h_26042023_{plotnr}_SDT{temp_type}_v.rds"),     glue("Dr_Ni_σT{temp_type}_v"),
-      glue("400samples_20parameters_07h_26042023_{plotnr}_gradT{temp_type}_v.rds"),   glue("Dr_Ni_∇T{temp_type}_v"),
+      glue("400samples_23parameters_07h_26042023_{plotnr}_avT{temp_type}.rds"),     glue("Dr_Ni_≈T{temp_type}"),
+      glue("400samples_23parameters_07h_26042023_{plotnr}_SDT{temp_type}.rds"),     glue("Dr_Ni_σT{temp_type}"),
+      glue("400samples_23parameters_07h_26042023_{plotnr}_avT{temp_type}_v.rds"),     glue("Dr_Ni_≈T{temp_type}_v"),
+      glue("400samples_23parameters_07h_26042023_{plotnr}_SDT{temp_type}_v.rds"),     glue("Dr_Ni_σT{temp_type}_v"),
+      glue("400samples_23parameters_07h_26042023_{plotnr}_gradT{temp_type}_v.rds"),   glue("Dr_Ni_∇T{temp_type}_v"),
       ## Wet season
       ### Noon
-      glue("400samples_20parameters_19h_26112023_{plotnr}_avT{temp_type}.rds"),     glue("We_No_≈T{temp_type}"),
-      glue("400samples_20parameters_19h_26112023_{plotnr}_SDT{temp_type}.rds"),     glue("We_No_σT{temp_type}"),
-      glue("400samples_20parameters_19h_26112023_{plotnr}_avT{temp_type}_v.rds"),     glue("We_No_≈T{temp_type}_v"),
-      glue("400samples_20parameters_19h_26112023_{plotnr}_SDT{temp_type}_v.rds"),     glue("We_No_σT{temp_type}_v"),
-      glue("400samples_20parameters_19h_26112023_{plotnr}_gradT{temp_type}_v.rds"),   glue("We_No_∇T{temp_type}_v"),
+      glue("400samples_23parameters_19h_26112023_{plotnr}_avT{temp_type}.rds"),     glue("We_No_≈T{temp_type}"),
+      glue("400samples_23parameters_19h_26112023_{plotnr}_SDT{temp_type}.rds"),     glue("We_No_σT{temp_type}"),
+      glue("400samples_23parameters_19h_26112023_{plotnr}_avT{temp_type}_v.rds"),     glue("We_No_≈T{temp_type}_v"),
+      glue("400samples_23parameters_19h_26112023_{plotnr}_SDT{temp_type}_v.rds"),     glue("We_No_σT{temp_type}_v"),
+      glue("400samples_23parameters_19h_26112023_{plotnr}_gradT{temp_type}_v.rds"),   glue("We_No_∇T{temp_type}_v"),
       ### Night
-      glue("400samples_20parameters_07h_26112023_{plotnr}_avT{temp_type}.rds"),     glue("We_Ni_≈T{temp_type}"),
-      glue("400samples_20parameters_07h_26112023_{plotnr}_SDT{temp_type}.rds"),     glue("We_Ni_σT{temp_type}"),
-      glue("400samples_20parameters_07h_26112023_{plotnr}_avT{temp_type}_v.rds"),     glue("We_Ni_≈T{temp_type}_v"),
-      glue("400samples_20parameters_07h_26112023_{plotnr}_SDT{temp_type}_v.rds"),     glue("We_Ni_σT{temp_type}_v"),
-      glue("400samples_20parameters_07h_26112023_{plotnr}_gradT{temp_type}_v.rds"),   glue("We_Ni_∇T{temp_type}_v"),
+      glue("400samples_23parameters_07h_26112023_{plotnr}_avT{temp_type}.rds"),     glue("We_Ni_≈T{temp_type}"),
+      glue("400samples_23parameters_07h_26112023_{plotnr}_SDT{temp_type}.rds"),     glue("We_Ni_σT{temp_type}"),
+      glue("400samples_23parameters_07h_26112023_{plotnr}_avT{temp_type}_v.rds"),     glue("We_Ni_≈T{temp_type}_v"),
+      glue("400samples_23parameters_07h_26112023_{plotnr}_SDT{temp_type}_v.rds"),     glue("We_Ni_σT{temp_type}_v"),
+      glue("400samples_23parameters_07h_26112023_{plotnr}_gradT{temp_type}_v.rds"),   glue("We_Ni_∇T{temp_type}_v"),
     )
 
     ##########
@@ -86,12 +86,12 @@ for(plotnr in plots){
     param_order <- c(
       "betad", "beta0", "omega", "Kd_v", "Kb_v", "omega_g_v",
       "e_forest", "beta_lw", "omega_lw", "Kd_lw_v", "omega_g_lw_v",
-      "h", "g_macro_ref", "infl_macro_ref", "infl_soil_ref", "infl_forest_ref", "g_forest_ref", "p_ground", "g_soil", "k_soil",
+      "h", "g_macro_ref", "infl_macro_ref", "infl_soil_ref", "infl_forest_ref", "g_forest_ref", "p_ground", "g_soil_ref", "k_soil",
       "gs_max", "stomata_closure", "wind_factor"
     )
     # Focused parameter sequence in order from most influential to least influential (to be plot in this order)
     focus_params <- c("infl_macro_ref", "infl_soil_ref", "g_macro_ref",
-                      "g_soil_ref", "infl_forest_ref", "k_soil",
+                      "g_soil", "infl_forest_ref", "k_soil",
                        "h", "p_ground", "g_forest_ref",
                       "gs_max", "stomata_closure", "wind_factor")
     # Shortwave parameter sequence
@@ -108,10 +108,10 @@ for(plotnr in plots){
       "#D62828",  # red
       "#6A040F",  # very dark red
       "#A4161A",  # dark red
-      "#E98B1E",   # deep orange
-      "purple",
-      "purple3",
-      "purple4"
+      "#E98B1E",  # deep orange
+      "purple",   # purple
+      "pink",     # pink
+      "darkgreen" # dark green
     )
 
 
@@ -134,7 +134,7 @@ for(plotnr in plots){
       h           = expression(italic(h)),
       p_ground    = expression(italic(p)),
       g_forest_ref    = expression(italic(g)[f]),
-      gs_max    = expression(italic(gs)[max]),
+      gs_max    = expression(italic(g)[s * "," * max]),
       stomata_closure     = expression(italic(s)[c]),
       wind_factor     = expression(italic(w)[f]),
       `SW parameters` = "SW parameters",

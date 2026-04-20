@@ -29,12 +29,16 @@ start_analysis <- Sys.time()
 # INPUT
 # -----------------
 
+plotnr = "C13" # C13 or R11
+
+season_string = "C13_calibrated" # C13 R11 |_uncalibrated
+
 params = list(
   # Calibrated parameters (HEAT)
-  infl_macro = 7.69, g_macro = 39.96, infl_soil = 8.49,
-  # C13: infl_macro = 7.69, g_macro = 39.96, infl_soil = 8.49,
-  # R11: infl_macro = 6.31, g_macro = 39.91, infl_soil = 2.74,
-  # uncalibrated, fixed values: infl_macro = 32.5, g_macro = 25, infl_soil = 5,
+  wind_factor = 5.5, infl_macro_ref = 32.5, infl_soil_ref = 5,
+  # C13: wind_factor = 7.19, infl_macro_ref = 59.9, infl_soil_ref = 9.88,
+  # R11: wind_factor = 5.55, infl_macro_ref = 57.98, infl_soil_ref = 9.55,
+  # uncalibrated, fixed values: wind_factor = 5.5, infl_macro_ref = 32.5, infl_soil_ref = 5,
 
   # Fixed parameters (SW RTM)
   betad = 0.325, beta0 = 0.325, omega = 0.52, Kd_v = 0.775, Kb_v = 1.25, omega_g_v = 0.13,
@@ -42,12 +46,21 @@ params = list(
   # Fixed parameters (LW RTM)
   e_forest = 0.965, beta_lw = 0.325, omega_lw = 0.035, Kd_lw_v = 0.3, omega_g_lw_v = 0.055, Kd_lw_h = 0.3, omega_g_lw_h = 0.035,
   # Fixed parameters (HEAT)
-  h = 10, infl_forest = 5, g_forest = 12.5, p_ground = 0.225, g_soil = 10, k_soil = 1.225
+  h = 10, p_ground = 0.225, k_soil = 1.225,
+
+  # g and i
+  g_macro_ref = 25,
+  g_forest_ref = 12.5,
+  g_soil_ref = 10,
+  infl_forest_ref = 5,
+
+  # PM LE parameters
+  gs_max = 0.5,
+  stomata_closure = 0.75
+
+
 )
 
-plotnr = "C13" # C13 or R11
-
-season_string = "C13_calibrated" # C13 R11 |_uncalibrated
 
 ## year
 all_datetimes <- c(
@@ -97,6 +110,7 @@ parts <- future_lapply(
       # ---- Imports ----
       import_temp_observations(datetime)
       import_rad_observations(datetime)
+      import_RH_u_observations(datetime)
 
       # ---- Model run ----
       grid_local <- voxel_TLS$grid

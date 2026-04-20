@@ -100,8 +100,9 @@ create_model_parameters <- function() {
   gs_max <<- 0.05
   stomata_closure <<- 0.6
 
-  # g(u) and i(u) parameter
-  wind_factor <<- 3.5 # 5.5/10+
+  # g(u) parameters
+  k_u <<- 0.2 # wind attenuation coefficient (dimensionless)
+  u_ref <<- 0.3 # typical wind speed around forests (above and below canopy) (m/s)
 
 }
 

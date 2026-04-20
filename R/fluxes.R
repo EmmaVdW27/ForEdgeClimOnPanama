@@ -112,9 +112,15 @@ saturated_vapor_pressure <- function(temp) {
 calculate_LE_PM_C <- function(T_surf_C, T_air_C, SW_down, net_rad, G) {
   ga <- g_forest
 
+  # make RH density dependent (more density = more RH) -> empirical canopy humidity parameterisation
+  # 20: typical difference in RH between open terrain and forest core
+  # -3: rate at which the canopy closes aerodynamically
+  # 30: RH < 30 is very rare in forests, this ensures no extreme VPD
+  RH_local <- pmin(100, pmax(30, RH + 20*(1-exp(-3*den))))
+
   # saturation vapour pressure
   es_leaf <- saturated_vapor_pressure(T_surf_C)
-  ea <- saturated_vapor_pressure(T_air_C) * (RH / 100)
+  ea <- saturated_vapor_pressure(T_air_C) * (RH_local / 100)
   VPD <- pmax(0, es_leaf - ea)
 
   slope <- 4098 * es_leaf / (T_surf_C + 237.3)^2

@@ -24,8 +24,8 @@ t_end   <- as.POSIXct("2023-12-31 00:00:00", tz = "EST")
 input_temps <- readRDS("Data/TMS_macro_2023_C13_and_R11.rds")
 
 # model files (one per plot)
-input_model_C13 <- readRDS("Output/timeseries/data/timeseries_C13_uncalibrated.rds")
-input_model_R11 <- readRDS("Output/timeseries/data/timeseries_R11_uncalibrated.rds")
+input_model_C13 <- readRDS("Output/timeseries/data/timeseries_C13_uncalibrated_RH_and_u.rds")
+input_model_R11 <- readRDS("Output/timeseries/data/timeseries_R11_uncalibrated_RH_and_u.rds")
 #input_model_R11_previous <- readRDS("Output/timeseries/data/timeseries_R11_uncalibrated.rds")
 
 # helper: hourly mean model per plot

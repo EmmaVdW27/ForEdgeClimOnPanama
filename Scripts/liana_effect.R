@@ -1,9 +1,9 @@
 ###############################################################################
-# Script to investigate whether the observed liana effect (cooler temperatures in liana plots) can be modelled.
+# Script to investigate whether the observed liana effect (cooler temperatures
+# in liana plots) can be modelled.
 # Liana removal plot R11 and control plot C13 were used for this investigation.
 #
 # Author: Emma Van de Walle - Q-ForestLab
-#
 ###############################################################################
 
 library(dplyr)
@@ -14,26 +14,38 @@ library(ggplot2)
 # INPUT #
 #########
 
-# micro temperature modelled and observed
 input_model_C13 <- readRDS("Output/timeseries/data/timeseries_C13_calibrated.rds")
 input_model_R11 <- readRDS("Output/timeseries/data/timeseries_R11_calibrated.rds")
 
-# macro temperature
-input_temps <- readRDS("Data/TMS_macro_2023_C13_and_R11.rds")
+input_model_C13_v2 <- readRDS("Output/timeseries/data/timeseries_C13_calibrated_PM_and_u.rds")
+input_model_R11_v2 <- readRDS("Output/timeseries/data/timeseries_R11_calibrated_PM_and_u.rds")
 
-# output path
 output_path = "Output/liana-effect/"
 
 #########
+# CLEAN DATETIME
+#########
 
-# set datetime
-input_model_C13 <- input_model_C13 %>%
-  mutate(datetime = ymd_hms(datetime))
+clean_datetime <- function(df) {
+  df %>%
+    mutate(
+      datetime = trimws(datetime),
+      datetime = na_if(datetime, ""),
+      datetime = na_if(datetime, "NA"),
+      datetime = suppressWarnings(ymd_hms(datetime))
+    ) %>%
+    filter(!is.na(datetime))
+}
 
-input_model_R11 <- input_model_R11 %>%
-  mutate(datetime = ymd_hms(datetime))
+input_model_C13    <- clean_datetime(input_model_C13)
+input_model_R11    <- clean_datetime(input_model_R11)
+input_model_C13_v2 <- clean_datetime(input_model_C13_v2)
+input_model_R11_v2 <- clean_datetime(input_model_R11_v2)
 
-# mean over sensors
+#########
+# AGGREGATION
+#########
+
 C13_plot <- input_model_C13 %>%
   group_by(datetime) %>%
   summarise(
@@ -48,94 +60,158 @@ R11_plot <- input_model_R11 %>%
     mod_R11 = mean(temperature_model, na.rm = TRUE)
   )
 
-# join dataframes
-comparison <- C13_plot %>%
-  inner_join(R11_plot, by = "datetime") #%>%
-  # filter on day or night hours
-  #filter(hour(datetime) >= 21 | hour(datetime) <= 3) # night
-  #filter(hour(datetime) >= 9 & hour(datetime) <= 15) # day
-
-# liana effect comparison
-comparison <- comparison %>%
-  mutate(
-    delta_obs  = obs_R11 - obs_C13,
-    delta_mod  = mod_R11 - mod_C13,
-    delta_diff = delta_mod - delta_obs   # model bias in the liana-effect
+C13_plot_v2 <- input_model_C13_v2 %>%
+  group_by(datetime) %>%
+  summarise(
+    mod_C13_v2 = mean(temperature_model, na.rm = TRUE)
   )
 
-# PLOTS
-#######
+R11_plot_v2 <- input_model_R11_v2 %>%
+  group_by(datetime) %>%
+  summarise(
+    mod_R11_v2 = mean(temperature_model, na.rm = TRUE)
+  )
 
-# Scatter plot
-scatter = ggplot(comparison, aes(x = delta_obs, y = delta_mod)) +
-  geom_point(alpha = 0.5, colour = "blue") +
-  geom_abline(slope = 1, intercept = 0, colour = "red", linewidth = 1.2) +
-  labs(
-    x = "Observed liana effect (R11 - C13, °C)",
-    y = "Modelled liana effect (R11 - C13, °C)"
-  ) +
-  theme_bw()
+#########
+# JOIN
+#########
 
-print(scatter)
-ggsave(paste0(output_path, "liana-effect_scatter.png"), plot = scatter, width = 8, height = 4, dpi = 500)
+comparison <- C13_plot %>%
+  inner_join(R11_plot, by = "datetime") %>%
+  inner_join(C13_plot_v2, by = "datetime") %>%
+  inner_join(R11_plot_v2, by = "datetime")
 
-# Timeseries plot
-# Calculate means
-mean_obs <- mean(comparison$delta_obs, na.rm = TRUE)
-mean_mod <- mean(comparison$delta_mod, na.rm = TRUE)
+#########
+# REMOVE PERIOD (NO GAPS)
+#########
 
-# Left boundary for placing text
+exclude_start <- ymd_hms("2023-06-21 00:00:00")
+exclude_end   <- ymd_hms("2023-06-27 23:59:59")
+
+comparison <- comparison %>%
+  filter(!(datetime >= exclude_start & datetime <= exclude_end))
+
+#########
+# DELTAS
+#########
+
+comparison <- comparison %>%
+  mutate(
+    delta_obs    = obs_R11 - obs_C13,
+    delta_mod    = mod_R11 - mod_C13,
+    delta_mod_v2 = mod_R11_v2 - mod_C13_v2
+  )
+
+###################
+# TIMESERIES PLOT #
+###################
+
+mean_obs    <- mean(comparison$delta_obs, na.rm = TRUE)
+mean_mod    <- mean(comparison$delta_mod, na.rm = TRUE)
+mean_mod_v2 <- mean(comparison$delta_mod_v2, na.rm = TRUE)
+
 xmin <- min(comparison$datetime, na.rm = TRUE)
+xmax <- max(comparison$datetime, na.rm = TRUE)
 
 timeseries <- ggplot(comparison, aes(x = datetime)) +
 
-  # graphs
   geom_line(aes(y = delta_obs, colour = "Observed"),
-            linewidth = 0.6, alpha = 0.4) +
-  geom_line(aes(y = delta_mod, colour = "Modelled"),
-            linewidth = 0.6, alpha = 0.4) +
+            linewidth = 0.7, alpha = 1) +
+  geom_line(aes(y = delta_mod, colour = "Modelled v1"),
+            linewidth = 0.7, alpha = 1) +
+  geom_line(aes(y = delta_mod_v2, colour = "Modelled v2"),
+            linewidth = 0.7, alpha = 1) +
 
-  # mean lines
   geom_hline(aes(yintercept = mean_obs, colour = "Observed"),
-             linewidth = 1.2) +
-  geom_hline(aes(yintercept = mean_mod, colour = "Modelled"),
-             linewidth = 1.2) +
+             linewidth = 1.4) +
+  geom_hline(aes(yintercept = mean_mod, colour = "Modelled v1"),
+             linewidth = 1.4) +
+  geom_hline(aes(yintercept = mean_mod_v2, colour = "Modelled v2"),
+             linewidth = 1.4) +
 
-  # mean value labels (boven de lijn, links)
-  annotate("text",
-           x = xmin,
-           y = mean_obs,
-           label = paste0("Mean = ", round(mean_obs, 2), " °C"),
-           colour = "#0047AB",
-           hjust = 0,
-           vjust = -0.5,
-           size = 5) +
+  # mean labels
+  # observed (links)
+  geom_label(
+    data = data.frame(x = xmin, y = mean_obs),
+    aes(x = x, y = y,
+        label = paste0("Mean = ", round(mean_obs, 2), " °C")),
+    fill = "white",
+    colour = "blue",
+    hjust = 0,
+    vjust = -0.5,
+    size = 5.5,
+    label.size = 0,
+    inherit.aes = FALSE
+  ) +
 
-  annotate("text",
-           x = xmin,
-           y = mean_mod,
-           label = paste0("Mean = ", round(mean_mod, 2), " °C"),
-           colour = "#B22222",
-           hjust = 0,
-           vjust = +1.5,
-           size = 5) +
+  # model v1 (rechts)
+  geom_label(
+    data = data.frame(x = xmax, y = mean_mod),
+    aes(x = x, y = y,
+        label = paste0("Mean = ", round(mean_mod, 2), " °C")),
+    fill = "white",
+    colour = "red",
+    hjust = 1,
+    vjust = 1.5,
+    size = 5.5,
+    label.size = 0,
+    inherit.aes = FALSE
+  ) +
 
-  # colours
-  scale_colour_manual(values = c("Observed" = "#0047AB",
-                                 "Modelled" = "#B22222")) +
+  # model v2 (rechts)
+  geom_label(
+    data = data.frame(x = xmax, y = mean_mod_v2),
+    aes(x = x, y = y,
+        label = paste0("Mean = ", round(mean_mod_v2, 2), " °C")),
+    fill = "white",
+    colour = "orange",
+    hjust = 1,
+    vjust = -1.5,
+    size = 5.5,
+    label.size = 0,
+    inherit.aes = FALSE
+  ) +
 
-  labs(y = "Temperature difference (R11 - C13, °C)",
-       colour = "") +
-  theme_bw()
+  scale_colour_manual(values = c(
+    "Observed" = "blue",
+    "Modelled v1" = "red",
+    "Modelled v2" = "orange"
+  )) +
+
+  labs(
+    title = "Liana effect: observed vs modelled",
+    x = "Datetime",
+    y = "Temperature difference (R11 - C13, °C)",
+    colour = ""
+  ) +
+
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 20, face = "bold"),
+    axis.title = element_text(size = 16),
+    axis.text = element_text(size = 14),
+    legend.text = element_text(size = 14),
+    legend.position = "top"
+  )
 
 print(timeseries)
 
-ggsave(paste0(output_path, "liana-effect_timeseries.png"),
+ggsave(paste0(output_path, "liana-effect_timeseries_v1_v2.png"),
        plot = timeseries,
-       width = 10, height = 5, dpi = 500)
+       width = 12, height = 6, dpi = 500)
 
-# RMSE of liana-effect
-print(sqrt(mean((comparison$delta_mod - comparison$delta_obs)^2, na.rm = TRUE)))
+##########
+# METRICS #
+##########
 
-# correlation of liana-effect
-print(cor(comparison$delta_obs, comparison$delta_mod, use = "complete.obs"))
+rmse_v1 <- sqrt(mean((comparison$delta_mod - comparison$delta_obs)^2, na.rm = TRUE))
+rmse_v2 <- sqrt(mean((comparison$delta_mod_v2 - comparison$delta_obs)^2, na.rm = TRUE))
+
+print(paste("RMSE v1:", rmse_v1))
+print(paste("RMSE v2:", rmse_v2))
+
+cor_v1 <- cor(comparison$delta_obs, comparison$delta_mod, use = "complete.obs")
+cor_v2 <- cor(comparison$delta_obs, comparison$delta_mod_v2, use = "complete.obs")
+
+print(paste("Correlation v1:", cor_v1))
+print(paste("Correlation v2:", cor_v2))

@@ -40,10 +40,10 @@ plotnr = "C13" # C13 or R11
 date_string <- 'C13_year_50_generations'
 max_it        <- 49     # generations (there will be max_it + 1 generations)
 
-# 1. First day of each month in 2023
+# 1. Second day of each month in 2023
 first_days <- seq(
-  from = as.Date("2023-01-01"),
-  to   = as.Date("2023-12-01"),
+  from = as.Date("2023-01-02"),
+  to   = as.Date("2023-12-02"),
   by   = "month"
 )
 
@@ -86,20 +86,21 @@ if(plotnr == "C13"){
 # PARAMETER NAMES & DEFAULTS
 # -----------------
 # Key parameters
-param_names <- c("infl_macro", "g_macro", "infl_soil")
+param_names <- c("wind_factor", "infl_macro_ref", "infl_soil_ref")
 # Fixed parameters (SW RTM)
 betad <<- 0.325; beta0 <<- 0.325; omega <<- 0.52; Kd_v <<- 0.775; Kb_v <<- 1.25; omega_g_v <<- 0.13;
 # Fixed parameters (LW RTM)
 e_forest <<- 0.965; beta_lw <<- 0.325; omega_lw <<- 0.035; Kd_lw_v <<- 0.3; omega_g_lw_v <<- 0.055;
 # Fixed parameters (HEAT)
-h <<- 10; infl_soil <<- 5; infl_forest <<- 5; g_forest <<- 12.5; p_ground <<- 0.225; g_soil <<- 10; k_soil <<- 1.225
+h <<- 10; g_macro_ref <<- 25; infl_forest_ref <<- 5; g_forest_ref <<- 12.5; p_ground <<- 0.225; g_soil_ref <<- 10; k_soil <<- 1.225;
+gs_max <<- 0.5; stomata_closure <<- 0.8
 
 # Initial values (mean value from uniform parameter distributions)
-start_vals <- c(32.5,25,5)
+start_vals <- c(5.25,32.5,5)
 
 # Bounds
-lower_bounds <- c(5,10,0)
-upper_bounds <- c(60,40,10)
+lower_bounds <- c(0.5,5,0)
+upper_bounds <- c(10,60,10)
 
 
 # -----------------
@@ -116,7 +117,7 @@ create_physical_constants()
 
 # Helper to set parameters
 set_params_from_vec <- function(par) {
-  infl_macro <<- par[1]; g_macro <<- par[2]; infl_soil <<- par[3]
+  wind_factor <<- par[1]; infl_macro_ref <<- par[2]; infl_soil_ref <<- par[3]
 }
 
 # evaluator that does everything (RMSE, R2, ME, NSE and SD)
@@ -134,14 +135,16 @@ evaluate_par <- function(par) {
         # ---- Imports ----
         import_temp_observations(datetime)
         import_rad_observations(datetime)
+        import_RH_u_observations(datetime)
 
         # ---- Model run ----
         grid_local <- voxel_TLS$grid
         grid_local$density <- grid_local$density * scale_factor
+
         res <- run_foredgeclim(grid_local, datetime)
+
         micro_grid <- res$micro_grid
         air_temp   <- res$air_temperature
-        if (any(!is.finite(air_temp))) stop("NaN/Inf in air_temp")
 
         # ---- Observations ----
         key <- format(datetime, "%Y%m%d_%H")
