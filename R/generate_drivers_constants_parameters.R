@@ -103,6 +103,6 @@ create_model_parameters <- function() {
   # g(u) parameters
   k_u <<- 0.2 # wind attenuation coefficient (dimensionless)
   u_ref <<- 0.3 # typical wind speed around forests (above and below canopy) (m/s)
-
+  aero_closure <<- 3  # rate at which the canopy closes aerodynamically
 }
 

@@ -8,6 +8,9 @@ Data/*
 !Data/TLS_scaled_DTM_and_grid_R11_Panama.rds
 !Data/Table_CNR1_2023.dat
 !Data/TMS_macro_2023_C13_and_R11.rds
+!Data/bci_ava_ws_elect.csv
+!Data/bci_cl_rh_elect.csv
+!Data/sensor_locations_all_plots.xlsx
 Output/*
 !Output/2023-04-26_14/
 
