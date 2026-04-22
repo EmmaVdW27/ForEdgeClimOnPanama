@@ -14,8 +14,8 @@ library(ggplot2)
 # INPUT #
 #########
 
-input_model_C13 <- readRDS("Output/timeseries/data/timeseries_C13_calibrated.rds")
-input_model_R11 <- readRDS("Output/timeseries/data/timeseries_R11_calibrated.rds")
+input_model_C13 <- readRDS("Output/timeseries/data/timeseries_C13_v1.0_calibrated.rds")
+input_model_R11 <- readRDS("Output/timeseries/data/timeseries_R11_v1.0_calibrated.rds")
 
 input_model_C13_v2 <- readRDS("Output/timeseries/data/timeseries_C13_calibrated_PM_and_u.rds")
 input_model_R11_v2 <- readRDS("Output/timeseries/data/timeseries_R11_calibrated_PM_and_u.rds")
@@ -89,7 +89,9 @@ exclude_start <- ymd_hms("2023-06-21 00:00:00")
 exclude_end   <- ymd_hms("2023-06-27 23:59:59")
 
 comparison <- comparison %>%
-  filter(!(datetime >= exclude_start & datetime <= exclude_end))
+  mutate(
+    across(where(is.numeric), ~ ifelse(datetime >= exclude_start & datetime <= exclude_end, NA, .))
+  )
 
 #########
 # DELTAS
@@ -115,83 +117,97 @@ xmax <- max(comparison$datetime, na.rm = TRUE)
 
 timeseries <- ggplot(comparison, aes(x = datetime)) +
 
+  # lijnen
   geom_line(aes(y = delta_obs, colour = "Observed"),
-            linewidth = 0.7, alpha = 1) +
-  geom_line(aes(y = delta_mod, colour = "Modelled v1"),
-            linewidth = 0.7, alpha = 1) +
-  geom_line(aes(y = delta_mod_v2, colour = "Modelled v2"),
-            linewidth = 0.7, alpha = 1) +
+            linewidth = 0.8, alpha = 0.9) +
+  geom_line(aes(y = delta_mod_v2, colour = "Modelled v1.1"),
+            linewidth = 0.8, alpha = 0.9) +
+  geom_line(aes(y = delta_mod, colour = "Modelled v1.0"),
+            linewidth = 0.8, alpha = 0.9) +
 
-  geom_hline(aes(yintercept = mean_obs, colour = "Observed"),
-             linewidth = 1.4) +
-  geom_hline(aes(yintercept = mean_mod, colour = "Modelled v1"),
-             linewidth = 1.4) +
-  geom_hline(aes(yintercept = mean_mod_v2, colour = "Modelled v2"),
-             linewidth = 1.4) +
 
-  # mean labels
-  # observed (links)
+  # mean lines → dashed + dikker + bovenop
+  # WITTE HALO (achtergrond)
+  geom_hline(yintercept = mean_obs,
+             colour = "white", linewidth = 3) +
+  geom_hline(yintercept = mean_mod,
+             colour = "white", linewidth = 3) +
+  geom_hline(yintercept = mean_mod_v2,
+             colour = "white", linewidth = 3) +
+
+  # ECHTE MEAN LINES (bovenop)
+  geom_hline(yintercept = mean_obs,
+             colour = "blue", linetype = "dashed", linewidth = 1.5) +
+  geom_hline(yintercept = mean_mod,
+             colour = "orange", linetype = "dashed", linewidth = 1.5) +
+  geom_hline(yintercept = mean_mod_v2,
+             colour = "red", linetype = "dashed", linewidth = 1.5) +
+
+  # labels met witte achtergrond + outline
   geom_label(
     data = data.frame(x = xmin, y = mean_obs),
     aes(x = x, y = y,
-        label = paste0("Mean = ", round(mean_obs, 2), " °C")),
+        label = paste0("Mean obs = ", round(mean_obs, 2), " °C")),
     fill = "white",
     colour = "blue",
     hjust = 0,
     vjust = -0.5,
-    size = 5.5,
-    label.size = 0,
+    size = 6,
+    label.size = 0.3,
+    fontface = "bold",
     inherit.aes = FALSE
   ) +
 
-  # model v1 (rechts)
   geom_label(
     data = data.frame(x = xmax, y = mean_mod),
     aes(x = x, y = y,
-        label = paste0("Mean = ", round(mean_mod, 2), " °C")),
-    fill = "white",
-    colour = "red",
-    hjust = 1,
-    vjust = 1.5,
-    size = 5.5,
-    label.size = 0,
-    inherit.aes = FALSE
-  ) +
-
-  # model v2 (rechts)
-  geom_label(
-    data = data.frame(x = xmax, y = mean_mod_v2),
-    aes(x = x, y = y,
-        label = paste0("Mean = ", round(mean_mod_v2, 2), " °C")),
+        label = paste0("Mean v1.0 = ", round(mean_mod, 2), " °C")),
     fill = "white",
     colour = "orange",
     hjust = 1,
-    vjust = -1.5,
-    size = 5.5,
-    label.size = 0,
+    vjust = 1.5,
+    size = 6,
+    label.size = 0.3,
+    fontface = "bold",
     inherit.aes = FALSE
   ) +
 
+  geom_label(
+    data = data.frame(x = xmax, y = mean_mod_v2),
+    aes(x = x, y = y,
+        label = paste0("Mean v1.1 = ", round(mean_mod_v2, 2), " °C")),
+    fill = "white",
+    colour = "red",
+    hjust = 1,
+    vjust = -0.5,
+    size = 6,
+    label.size = 0.3,
+    fontface = "bold",
+    inherit.aes = FALSE
+  ) +
+
+  # betere kleuren (colorblind safe)
   scale_colour_manual(values = c(
-    "Observed" = "blue",
-    "Modelled v1" = "red",
-    "Modelled v2" = "orange"
+    "Observed" = "blue",   # blauw
+    "Modelled v1.0" = "orange",# oranje
+    "Modelled v1.1" = "red" # red
   )) +
 
   labs(
     title = "Liana effect: observed vs modelled",
     x = "Datetime",
     y = "Temperature difference (R11 - C13, °C)",
-    colour = ""
+    colour = NULL
   ) +
 
   theme_bw() +
   theme(
-    plot.title = element_text(size = 20, face = "bold"),
-    axis.title = element_text(size = 16),
-    axis.text = element_text(size = 14),
-    legend.text = element_text(size = 14),
-    legend.position = "top"
+    plot.title = element_text(size = 22),
+    axis.title = element_text(size = 18),
+    axis.text = element_text(size = 15),
+    legend.text = element_text(size = 15),
+    legend.position = "top",
+    legend.key.width = unit(2, "cm")
   )
 
 print(timeseries)
@@ -207,11 +223,11 @@ ggsave(paste0(output_path, "liana-effect_timeseries_v1_v2.png"),
 rmse_v1 <- sqrt(mean((comparison$delta_mod - comparison$delta_obs)^2, na.rm = TRUE))
 rmse_v2 <- sqrt(mean((comparison$delta_mod_v2 - comparison$delta_obs)^2, na.rm = TRUE))
 
-print(paste("RMSE v1:", rmse_v1))
-print(paste("RMSE v2:", rmse_v2))
+print(paste("RMSE v1.0:", rmse_v1))
+print(paste("RMSE v1.1:", rmse_v2))
 
 cor_v1 <- cor(comparison$delta_obs, comparison$delta_mod, use = "complete.obs")
 cor_v2 <- cor(comparison$delta_obs, comparison$delta_mod_v2, use = "complete.obs")
 
-print(paste("Correlation v1:", cor_v1))
-print(paste("Correlation v2:", cor_v2))
+print(paste("Correlation v1.0:", cor_v1))
+print(paste("Correlation v1.1:", cor_v2))

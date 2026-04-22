@@ -62,19 +62,19 @@ param_ranges <- data.frame(
     "betad", "beta0", "omega", "Kd_v", "Kb_v", "omega_g_v",
     "e_forest", "beta_lw", "omega_lw", "Kd_lw_v", "omega_g_lw_v",
     "h", "g_macro_ref", "infl_macro_ref", "infl_soil_ref", "infl_forest_ref", "g_forest_ref", "p_ground", "g_soil_ref", "k_soil",
-    "gs_max", "stomata_closure", "wind_factor"
+    "gs_max", "stomata_closure", "k_u", "u_ref"
   ),
   min = c(
     0.3, 0.2, 0.43, 0.6, 0.5, 0.08,
     0.94, 0.3, 0.01, 0.2, 0.04,
     0, 10, 5, 0, 0, 5, 0.1, 5, 0.25,
-    0.2, 0.3, 0.5
+    0.2, 0.3, 0.2, 0.2
   ),
   max = c(
     0.35, 0.45, 0.61, 0.95, 2, 0.18,
     0.99, 0.35, 0.06, 0.4, 0.07,
     20, 40, 60, 10, 10, 20, 0.35, 15, 2.2,
-    0.8, 1.2, 10
+    0.8, 1.2, 1.2, 3
   ),
   stringsAsFactors = FALSE
 )

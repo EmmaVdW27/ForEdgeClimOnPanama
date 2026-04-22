@@ -87,13 +87,13 @@ for(plotnr in plots){
       "betad", "beta0", "omega", "Kd_v", "Kb_v", "omega_g_v",
       "e_forest", "beta_lw", "omega_lw", "Kd_lw_v", "omega_g_lw_v",
       "h", "g_macro_ref", "infl_macro_ref", "infl_soil_ref", "infl_forest_ref", "g_forest_ref", "p_ground", "g_soil_ref", "k_soil",
-      "gs_max", "stomata_closure", "wind_factor"
+      "gs_max", "stomata_closure", "k_u", "u_ref"
     )
     # Focused parameter sequence in order from most influential to least influential (to be plot in this order)
     focus_params <- c("infl_macro_ref", "infl_soil_ref", "g_macro_ref",
                       "g_soil", "infl_forest_ref", "k_soil",
                        "h", "p_ground", "g_forest_ref",
-                      "gs_max", "stomata_closure", "wind_factor")
+                      "gs_max", "stomata_closure", "k_u", "u_ref")
     # Shortwave parameter sequence
     SW_params <- c("betad", "beta0", "omega", "Kd_v", "Kb_v", "omega_g_v")
     # Longwave parameter sequence
@@ -109,9 +109,10 @@ for(plotnr in plots){
       "#6A040F",  # very dark red
       "#A4161A",  # dark red
       "#E98B1E",  # deep orange
+      "darkgreen", # dark green
+      "lightgreen",
       "purple",   # purple
-      "pink",     # pink
-      "darkgreen" # dark green
+      "pink"     # pink
     )
 
 
@@ -136,7 +137,8 @@ for(plotnr in plots){
       g_forest_ref    = expression(italic(g)[f]),
       gs_max    = expression(italic(g)[s * "," * max]),
       stomata_closure     = expression(italic(s)[c]),
-      wind_factor     = expression(italic(w)[f]),
+      k_u     = expression(italic(k)[u]),
+      u_ref     = expression(italic(u)[r]),
       `SW parameters` = "SW parameters",
       `LW parameters` = "LW parameters"
     )

@@ -110,39 +110,50 @@ saturated_vapor_pressure <- function(temp) {
 #' @return LE      Latent heat flux (W/m2)
 #'
 calculate_LE_PM_C <- function(T_surf_C, T_air_C, SW_down, net_rad, G) {
+
+  # aerodynamic conductance
   ga <- g_forest
 
-  # make RH density dependent (more density = more RH) -> empirical canopy humidity parameterisation
-  # 20: typical difference in RH between open terrain and forest core
-  # 30: RH < 30 is very rare in forests, this ensures no extreme VPD
-  RH_local <- pmin(100, pmax(30, RH + 20*(1-exp(-aero_closure*den))))
+  # --- 1. absolute vapour pressure from macro conditions ---
+  ea <- saturated_vapor_pressure(macro_temp - 273.15) * (RH / 100)
 
-  # saturation vapour pressure
+  # --- 2. saturation vapour pressure at leaf temperature ---
   es_leaf <- saturated_vapor_pressure(T_surf_C)
-  ea <- saturated_vapor_pressure(T_air_C) * (RH_local / 100)
+
+  # --- 3. vapour pressure deficit ---
   VPD <- pmax(0, es_leaf - ea)
 
+  # --- 4. slope of saturation vapour pressure curve ---
   slope <- 4098 * es_leaf / (T_surf_C + 237.3)^2
 
-  # Jarvis style stomatal conductance
-  # light response: stomata close at low PAR
+  # --- 5. PAR from shortwave ---
   PAR <- 0.45 * SW_down
-  f_light <- PAR / (PAR + 100)
-  # VPD response: stomata close at high VPD
-  f_vpd <- exp(-stomata_closure * VPD)
+
+  # --- 6. stomatal responses Jarvis style ---
+  f_light <- PAR / (PAR + 100) # stomata close at low PAR
+  f_vpd   <- exp(-stomata_closure * VPD) # stomata close at high VPD
 
   gs_eff <- gs_max * f_light * f_vpd
-  gs_eff <- pmax(0.0001, gs_eff) # never completely 0
+  gs_eff <- pmax(0.0001, gs_eff)
 
-  # core of PM: extra resistance of leaf
-  gamma_eff = gamma_psy * (1 + ga / gs_eff)
+  # --- 7. psychrometric correction: core of PM: extra leaf resistance ---
+  gamma_eff <- gamma_psy * (1 + ga / gs_eff)
 
-  # Penman-Monteith equation
-  # LE can be negative: condensation/dew
-  LE <- ( ((slope * (net_rad - G)) + (rho * Cp * ga * VPD)) / (slope + gamma_eff) ) *den
+  # --- 8. Penman-Monteith ---
+  # LE can be negative (condensation/dew)
+  LE <- ( (slope * (net_rad - G)) + (rho * Cp * ga * VPD) ) /
+    (slope + gamma_eff)
 
-  return(list(LE = LE, gamma_eff = gamma_eff))
+  # scale with vegetation density
+  LE <- LE * den
+
+  # --- 9. diagnostic RH ---
+  RH_local <- 100 * ea / saturated_vapor_pressure(T_air_C)
+  RH_local <- pmin(100, RH_local) # no oversaturation
+
+  return(list(LE = LE, gamma_eff = gamma_eff, VPD = VPD, RH = RH_local))
 }
+
 
 #' Function to calculate latent heat flux LE via Priestley-Taylor approximation
 #' (~ evapotranspiration, ET: LE = L_v . ET with L_v = latent heat of vaporization of water (J/kg))
