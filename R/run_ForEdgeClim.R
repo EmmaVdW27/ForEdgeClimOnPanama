@@ -347,7 +347,9 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
     net_radiation = net_radiation,
     sensible_flux = sensible_flux,
     latent_flux = latent_flux,
-    ground_flux = G
+    ground_flux = G,
+    RH = latent_flux_res$RH,
+    VPD = latent_flux_res$VPD
   )
 
   return(res)
