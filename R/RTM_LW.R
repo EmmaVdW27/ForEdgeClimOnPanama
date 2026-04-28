@@ -27,33 +27,33 @@ lw_two_stream <- function(soil_reflect, density, F_sky_lw, temperature, T_soil, 
   n <- length(density)
   # Add atmosphere layer
   density <- c(density, 0)
-  # Inverse optical depths
+  # Inverse optical depths -> moved to run_foredgeclim()
   # mu atmosphere (density = 0, no forest structure) is defined to be 1
-  mu <- ifelse(density == 0, 1, 1 / (Kd * density))  # Inverse optical depth diffuse radiation
+  # mu <- ifelse(density == 0, 1, 1 / (Kd * density))  # Inverse optical depth diffuse radiation
 
   # Initialization matrices
   S <- matrix(0, nrow = 2 * n + 2, ncol = 2 * n + 2)
   y <- numeric(2 * n + 2)
 
-  # Auxiliary variables
-  # Gamma
-  gamma_plus <- rep(0.5 * (1 + sqrt((1 - omega) / (1 - (1 - 2 * beta) * omega))) , n)
-  gamma_plus[n+1] = 1
-  gamma_minus <- rep(0.5 * (1 - sqrt((1 - omega) / (1 - (1 - 2 * beta) * omega))) , n)
-  gamma_minus[n+1] = 0
-  # Lambda
-  lambda <- sqrt((1 - (1 - 2 * beta) * omega) * (1 - omega) / (mu)^2)
-  lambda[n+1] = 0
+  # # Auxiliary variables -> moved to run_foredgeclim()
+  # # Gamma
+  # gamma_plus <<- rep(0.5 * (1 + sqrt((1 - omega) / (1 - (1 - 2 * beta) * omega))) , n)
+  # gamma_plus[n+1] <<- 1
+  # gamma_minus <<- rep(0.5 * (1 - sqrt((1 - omega) / (1 - (1 - 2 * beta) * omega))) , n)
+  # gamma_minus[n+1] <<- 0
+  # # Lambda
+  # lambda <<- sqrt((1 - (1 - 2 * beta) * omega) * (1 - omega) / (mu)^2)
+  # lambda[n+1] <<- 0
   # no Kappa and Delta as in shortwave RTM
 
   # Boundary conditions
   y[2*n+2] <- F_sky_diff #- black[n+1] # Downward (incoming) longwave radiation above canopy.
   y[1] <- black_g - (1 - omega_g)*black[1] # Upward (outgoing) longwave radiation from the ground surface.
 
-  S[2 * n + 2, 2 * n + 1] <- gamma_plus[n+1]
-  S[2 * n + 2, 2 * n + 2] <- gamma_minus[n+1]
-  S[1, 1] <- (gamma_minus[1] - omega_g*gamma_plus[1])*exp(-lambda[1]*density[1])
-  S[1, 2] <- (gamma_plus[1] - omega_g*gamma_minus[1])*exp(lambda[1]*density[1])
+  S[2 * n + 2, 2 * n + 1] <- gamma_plus_lw[n+1]
+  S[2 * n + 2, 2 * n + 2] <- gamma_minus_lw[n+1]
+  S[1, 1] <- (gamma_minus_lw[1] - omega_g*gamma_plus_lw[1])*exp(-lambda_lw[1]*density[1])
+  S[1, 2] <- (gamma_plus_lw[1] - omega_g*gamma_minus_lw[1])*exp(lambda_lw[1]*density[1])
 
   # **Vectorized matrix filling**
   indices <- 1:n
@@ -62,19 +62,19 @@ lw_two_stream <- function(soil_reflect, density, F_sky_lw, temperature, T_soil, 
   idx_next <- indices + 1
 
   # Calculate exponential terms
-  exp_lambda_density_neg <- exp(-lambda[idx_next] * density[idx_next])
-  exp_lambda_density_pos <- exp(lambda[idx_next] * density[idx_next])
+  exp_lambda_density_neg <- exp(-lambda_lw[idx_next] * density[idx_next])
+  exp_lambda_density_pos <- exp(lambda_lw[idx_next] * density[idx_next])
 
   # Populate the S matrix
-  S[cbind(idx_even, idx_odd)] <- gamma_plus[indices]
-  S[cbind(idx_even, idx_even)] <- gamma_minus[indices]
-  S[cbind(idx_even, idx_even + 1)] <- -gamma_plus[idx_next] * exp_lambda_density_neg
-  S[cbind(idx_even, idx_even + 2)] <- -gamma_minus[idx_next] * exp_lambda_density_pos
+  S[cbind(idx_even, idx_odd)] <- gamma_plus_lw[indices]
+  S[cbind(idx_even, idx_even)] <- gamma_minus_lw[indices]
+  S[cbind(idx_even, idx_even + 1)] <- -gamma_plus_lw[idx_next] * exp_lambda_density_neg
+  S[cbind(idx_even, idx_even + 2)] <- -gamma_minus_lw[idx_next] * exp_lambda_density_pos
 
-  S[cbind(idx_even + 1, idx_odd)] <- gamma_minus[indices]
-  S[cbind(idx_even + 1, idx_even)] <- gamma_plus[indices]
-  S[cbind(idx_even + 1, idx_odd + 2)] <- -gamma_minus[idx_next] * exp_lambda_density_neg
-  S[cbind(idx_even + 1, idx_even + 2)] <- -gamma_plus[idx_next] * exp_lambda_density_pos
+  S[cbind(idx_even + 1, idx_odd)] <- gamma_minus_lw[indices]
+  S[cbind(idx_even + 1, idx_even)] <- gamma_plus_lw[indices]
+  S[cbind(idx_even + 1, idx_odd + 2)] <- -gamma_minus_lw[idx_next] * exp_lambda_density_neg
+  S[cbind(idx_even + 1, idx_even + 2)] <- -gamma_plus_lw[idx_next] * exp_lambda_density_pos
 
   # Populate the vector y
   y[idx_even] <- black[idx_next] - black[indices]
@@ -93,12 +93,12 @@ lw_two_stream <- function(soil_reflect, density, F_sky_lw, temperature, T_soil, 
   k2 <- 2 * indices
   k2m1 <- k2 - 1
 
-  down <- x[k2m1] * gamma_plus[indices] * exp(-lambda[indices] * density[indices]) +
-    x[k2] * gamma_minus[indices] * exp(lambda[indices] * density[indices]) +
+  down <- x[k2m1] * gamma_plus_lw[indices] * exp(-lambda_lw[indices] * density[indices]) +
+    x[k2] * gamma_minus_lw[indices] * exp(lambda_lw[indices] * density[indices]) +
     black[indices]
 
-  up <- x[k2m1] * gamma_minus[indices] * exp(-lambda[indices] * density[indices]) +
-    x[k2] * gamma_plus[indices] * exp(lambda[indices] * density[indices]) +
+  up <- x[k2m1] * gamma_minus_lw[indices] * exp(-lambda_lw[indices] * density[indices]) +
+    x[k2] * gamma_plus_lw[indices] * exp(lambda_lw[indices] * density[indices]) +
     black[indices]
 
   # Calculate light levels and netto absorbed or emitted radiation
@@ -113,7 +113,8 @@ lw_two_stream <- function(soil_reflect, density, F_sky_lw, temperature, T_soil, 
   # There are no light levels for atmosphere
   #light_diff_level <- c(light_diff_level, NA)
 
-  result <- data.frame(
+  #result <- data.frame(
+  return(list(
     #layer = c(paste("layer", 1:n), "atmosphere"),
     density = density,
     temperature = c(temperature, NA),
@@ -121,12 +122,10 @@ lw_two_stream <- function(soil_reflect, density, F_sky_lw, temperature, T_soil, 
     F_d_up = round(up, 0),
     #BB_emission = black,
     net_lw = c(round(net_lw, 0), 0 )  # Net radiation in atmosphere is set to zero (no structure here)
-  )
+  ))
 
-  return(result)
 
 }
-
 
 
 #' 1D (vertical) longwave two-stream RTM
@@ -145,54 +144,80 @@ lw_two_stream <- function(soil_reflect, density, F_sky_lw, temperature, T_soil, 
 #' @param beta_lw Phase function parameter for longwave RTM.
 #' @return A dataframe with computed longwave fluxes and net longwave radiation.
 #' A lot of these parameters are global parameters and actually do not need to be stated as arguments.
-#' @importFrom data.table setorder setnames
 #' @export
 
-
 longwave_two_stream_RTM <- function(voxel_grid, micro_grid, lw_two_stream,
-                                    F_sky_lw, omega_g_lw_v, macro_temp,
-                                    Kd_lw_v, omega_lw, beta_lw) {
+                                         F_sky_lw, omega_g_lw_v, macro_temp,
+                                         Kd_lw_v, omega_lw, beta_lw) {
 
-  voxel_grid <- as.data.table(voxel_grid)
-  micro_grid <- as.data.table(micro_grid)
+  # create vectors, no data tables
+  X <- voxel_grid$X
+  Y <- voxel_grid$Y
+  Z <- voxel_grid$Z
+  density <- voxel_grid$density
 
-  # Set coordinate names of micro_grid similar to the ones of voxel_grid
-  setnames(micro_grid, old = c("x", "y", "z"), new = c("X", "Y", "Z"))
+  temperature <- micro_grid$temperature
+  T_soil <- micro_grid$T_soil
 
-  # Merge voxel_grid and micro_grid and filter T_soil
-  micro_grid <- micro_grid[, .(X, Y, Z, temperature, T_soil = ifelse(Z == 1, T_soil, NA))]
-  voxel_grid <- voxel_grid[micro_grid, on = .(X, Y, Z)]
+  n <- length(X)
 
-  ##########################
-  # Vertical longwave RTM  #
-  ##########################
+  # pre-allocation
+  F_d_down <- numeric(n)
+  F_d_up   <- numeric(n)
+  net_lw   <- numeric(n)
 
-  # Calculate fluxes per unique XY combination
-  final_results_lw_vertical <- voxel_grid[, {
-    # Single value for soil temp
-    T_soil_value <- na.omit(T_soil)[1]
+  # precompute columns
+  xy_id <- X + Y * max(X)
+  split_idx <- split(seq_len(n), xy_id)
 
-    # Number of layers
-    n_layers <- .N
+  for (idx in split_idx) {
+
+    # extract column
+    density_col <- density[idx]
+    temp_col    <- temperature[idx]
+    # single value for soil temp
+    T_soil_value <- NA_real_
+    for (j in idx) {
+      if (!is.na(T_soil[j])) {
+        T_soil_value <- T_soil[j]
+        break
+      }
+    }
+
+    ##########################
+    # Vertical longwave RTM  #
+    ##########################
 
     fluxes <- lw_two_stream(
-      soil_reflect = omega_g_lw_v, density = density, F_sky_lw = F_sky_lw,
-      temperature = temperature, T_soil = T_soil_value, T_macro = macro_temp,
-      Kd = Kd_lw_v, omega = omega_lw, beta = beta_lw
+      soil_reflect = omega_g_lw_v,
+      density = density_col,
+      F_sky_lw = F_sky_lw,
+      temperature = temp_col,
+      T_soil = T_soil_value,
+      T_macro = macro_temp,
+      Kd = Kd_lw_v,
+      omega = omega_lw,
+      beta = beta_lw
     )
 
-    .(X, Y, Z = seq_len(n_layers), density, temperature,
-      F_d_down = fluxes$F_d_down[1:n_layers],
-      F_d_up = fluxes$F_d_up[1:n_layers],
-      net_lw = fluxes$net_lw[1:n_layers])
-  }, by = .(X, Y)]
+    n_layers <- length(idx)
 
+    F_d_down[idx] <- fluxes$F_d_down[1:n_layers]
+    F_d_up[idx]   <- fluxes$F_d_up[1:n_layers]
+    net_lw[idx]   <- fluxes$net_lw[1:n_layers]
+  }
 
-  setorder(final_results_lw_vertical, X, Y, Z)
+  return(data.frame(
+    X = X,
+    Y = Y,
+    Z = Z,
+    density = density,
+    temperature = temperature,
+    F_d_down = F_d_down,
+    F_d_up = F_d_up,
+    net_lw = net_lw
+  ))
 
-  # Select relevant columns
-  final_results_lw <- final_results_lw_vertical[, .(X, Y, Z, density, temperature, F_d_down, F_d_up, net_lw)]
-
-  return(final_results_lw)
 }
+
 

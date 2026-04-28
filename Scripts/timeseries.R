@@ -108,6 +108,28 @@ parts <- future_lapply(
       grid_local <- voxel_TLS$grid
       grid_local$density <- grid_local$density * scale_factor
       res <- run_foredgeclim(grid_local, datetime)
+
+      # ---- Additional model outputs (z = 1 averages) ----
+
+      # Surface temperature (already in micro_grid, in Kelvin)
+      surf_temp_grid <- res$micro_grid %>%
+        dplyr::filter(z == 1)
+
+      surf_temp_mean <- mean(surf_temp_grid$temperature - 273.15, na.rm = TRUE)
+
+      # Latent heat flux
+      LE_mean <- mean(res$latent_flux[surf_temp_grid$index], na.rm = TRUE)
+
+      # RH and VPD
+      RH_mean  <- mean(res$RH[surf_temp_grid$index], na.rm = TRUE)
+      VPD_mean <- mean(res$VPD[surf_temp_grid$index], na.rm = TRUE)
+
+      # Shortwave radiation components
+      Fd_mean <- mean(res$sw_rad$F_d_down[surf_temp_grid$index], na.rm = TRUE)
+      Fb_mean <- mean(res$sw_rad$F_b_down[surf_temp_grid$index], na.rm = TRUE)
+
+
+      # ---- Air temperature output ----
       micro_grid <- res$micro_grid
       air_temp   <- res$air_temperature
       if (any(!is.finite(air_temp))) stop("NaN/Inf in air_temp")
@@ -147,6 +169,14 @@ parts <- future_lapply(
         ) %>%
         dplyr::mutate(
           resid = temperature_model - value_mean
+        )%>%
+        dplyr::mutate(
+          LE_mean = LE_mean,
+          RH_mean = RH_mean,
+          VPD_mean = VPD_mean,
+          Fd_down_mean = Fd_mean,
+          Fb_down_mean = Fb_mean,
+          Tsurf_mean = surf_temp_mean
         )
 
 

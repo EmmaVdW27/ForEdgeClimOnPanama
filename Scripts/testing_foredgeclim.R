@@ -15,9 +15,9 @@ start_script = Sys.time()
 #########
 # INPUT #
 #########
-plotnr <- "C13" # C13 or R11
+plotnr <- "R11" # C13 or R11
 
-start_time <- as.POSIXct("2023-05-05 18:00:00", tz = "UTC") # first hour you want to run the model for
+start_time <- as.POSIXct("2023-04-26 19:00:00", tz = "UTC") # first hour you want to run the model for
 end_time <- start_time   # last hour you want to run the model for
 datetime_series <- seq(start_time, end_time, by = "hour")   # ForEdgeClim is run for all the hours between the first and last hour
 
@@ -82,75 +82,83 @@ for (current_datetime in datetime_series) {
   # RUN MODEL #
   #############
 
+#  Rprof("profile.out")
+
   res = run_foredgeclim(voxel_TLS$grid, current_datetime)
+#
+#   Rprof(NULL)
+#   res <- summaryRprof("profile.out")
+#   print(head(res$by.self, 15))
+
+
   saveRDS(res, paste0(output_path, '/model_results.rds'))
 
-  #--------------------
-  ########################################################
-  # COMPARE MODELLED AND OBSERVED TEMPERATURES (TOMST)  #
-  ########################################################
-
-  library(RANN)
-  library(dplyr)
-
-  # ---- Import TOMST observations ----
-  key <- format(current_datetime, "%Y%m%d_%H")
-  TOMST <- read.csv(paste0("Data/microtemp_air_obs_", key, "_", plotnr, ".csv"))
-
-  # ---- Extract modelled temperatures at z = 1 ----
-  temp_air_grid <- res$micro_grid
-  temp_air_grid$temperature <- res$air_temperature - 273.15
-
-  temp_air_grid <- temp_air_grid %>%
-    filter(z == 1) %>%
-    select(x, y, temperature)
-
-  # ---- Nearest neighbour search ----
-
-  # matrix with grid coordinates
-  grid_coords <- as.matrix(temp_air_grid[, c("x", "y")])
-
-  # matrix with sensor coordinates
-  sensor_coords <- as.matrix(TOMST[, c("x", "y")])
-
-  # nearest neighbour
-  nn <- nn2(
-    data = grid_coords,
-    query = sensor_coords,
-    k = 1
-  )
-
-  idx <- nn$nn.idx[, 1]
-
-  # ---- Add modelled temperatures to observations ----
-  TOMST <- TOMST %>%
-    mutate(
-      datetime = current_datetime,
-      temperature_model = temp_air_grid$temperature[idx],
-      resid = temperature_model - value_mean
-    )
-
-  # ---- Calculate mean temperatures ----
-  mean_model <- mean(TOMST$temperature_model, na.rm = TRUE)
-  mean_obs   <- mean(TOMST$value_mean, na.rm = TRUE)
-  cat("\n")
-
-  cat("Mean model temperature:", round(mean_model, 2), "°C\n")
-  cat("Mean observed temperature:", round(mean_obs, 2), "°C\n")
-  cat("\n")
-
-  cat("g_forest:", round(mean(g_forest), 2), "W/m2/K\n")
-  cat("g_soil:", round(mean(g_soil), 2), "W/m2/K\n")
-  cat("g_macro:", round(mean(g_macro), 2), "W/m2/K\n")
-  cat("\n")
-
-  # cat("infl_forest:", round(infl_forest, 2), "m\n")
-  # cat("infl_soil:", round(infl_soil, 2), "m\n")
-  # cat("infl_macro:", round(infl_macro, 2), "m\n")
-  cat("\n")
-
-
-  #--------------------------
+  # #--------------------
+  # ########################################################
+  # # COMPARE MODELLED AND OBSERVED TEMPERATURES (TOMST)  #
+  # ########################################################
+  #
+  # library(RANN)
+  # library(dplyr)
+  #
+  # # ---- Import TOMST observations ----
+  # key <- format(current_datetime, "%Y%m%d_%H")
+  # TOMST <- read.csv(paste0("Data/microtemp_air_obs_", key, "_", plotnr, ".csv"))
+  #
+  # # ---- Extract modelled temperatures at z = 1 ----
+  # temp_air_grid <- res$micro_grid
+  # temp_air_grid$temperature <- res$air_temperature - 273.15
+  #
+  # temp_air_grid <- temp_air_grid %>%
+  #   filter(z == 1) %>%
+  #   select(x, y, temperature)
+  #
+  # # ---- Nearest neighbour search ----
+  #
+  # # matrix with grid coordinates
+  # grid_coords <- as.matrix(temp_air_grid[, c("x", "y")])
+  #
+  # # matrix with sensor coordinates
+  # sensor_coords <- as.matrix(TOMST[, c("x", "y")])
+  #
+  # # nearest neighbour
+  # nn <- nn2(
+  #   data = grid_coords,
+  #   query = sensor_coords,
+  #   k = 1
+  # )
+  #
+  # idx <- nn$nn.idx[, 1]
+  #
+  # # ---- Add modelled temperatures to observations ----
+  # TOMST <- TOMST %>%
+  #   mutate(
+  #     datetime = current_datetime,
+  #     temperature_model = temp_air_grid$temperature[idx],
+  #     resid = temperature_model - value_mean
+  #   )
+  #
+  # # ---- Calculate mean temperatures ----
+  # mean_model <- mean(TOMST$temperature_model, na.rm = TRUE)
+  # mean_obs   <- mean(TOMST$value_mean, na.rm = TRUE)
+  # cat("\n")
+  #
+  # cat("Mean model temperature:", round(mean_model, 2), "°C\n")
+  # cat("Mean observed temperature:", round(mean_obs, 2), "°C\n")
+  # cat("\n")
+  #
+  # cat("g_forest:", round(mean(g_forest), 2), "W/m2/K\n")
+  # cat("g_soil:", round(mean(g_soil), 2), "W/m2/K\n")
+  # cat("g_macro:", round(mean(g_macro), 2), "W/m2/K\n")
+  # cat("\n")
+  #
+  # # cat("infl_forest:", round(infl_forest, 2), "m\n")
+  # # cat("infl_soil:", round(infl_soil, 2), "m\n")
+  # # cat("infl_macro:", round(infl_macro, 2), "m\n")
+  # cat("\n")
+  #
+  #
+  # #--------------------------
 
 
   # ############

@@ -3,6 +3,9 @@
 fast_load.R
 Blender_input.R
 Changes_with_ForEdgeClimv1.0.txt
+profile.out
+Scripts/test_chunks.R
+Scripts/Sobol_indices_wet_night.R
 Data/*
 !Data/TLS_scaled_DTM_and_grid_C13_Panama.rds
 !Data/TLS_scaled_DTM_and_grid_R11_Panama.rds
@@ -13,5 +16,6 @@ Data/*
 !Data/sensor_locations_all_plots.xlsx
 Output/*
 !Output/2023-04-26_14/
+
 
 

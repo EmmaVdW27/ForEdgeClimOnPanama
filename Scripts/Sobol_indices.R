@@ -52,30 +52,30 @@ for(plotnr in plots){
       ~file, ~label,
       ## Dry season
       ### Noon
-      glue("400samples_23parameters_19h_26042023_{plotnr}_avT{temp_type}.rds"),     glue("Dr_No_≈T{temp_type}"),
-      glue("400samples_23parameters_19h_26042023_{plotnr}_SDT{temp_type}.rds"),     glue("Dr_No_σT{temp_type}"),
-      glue("400samples_23parameters_19h_26042023_{plotnr}_avT{temp_type}_v.rds"),     glue("Dr_No_≈T{temp_type}_v"),
-      glue("400samples_23parameters_19h_26042023_{plotnr}_SDT{temp_type}_v.rds"),     glue("Dr_No_σT{temp_type}_v"),
-      glue("400samples_23parameters_19h_26042023_{plotnr}_gradT{temp_type}_v.rds"),   glue("Dr_No_∇T{temp_type}_v"),
+      glue("400samples_24parameters_19h_26042023_{plotnr}_avT{temp_type}.rds"),     glue("Dr_No_≈T{temp_type}"),
+      glue("400samples_24parameters_19h_26042023_{plotnr}_SDT{temp_type}.rds"),     glue("Dr_No_σT{temp_type}"),
+      glue("400samples_24parameters_19h_26042023_{plotnr}_avT{temp_type}_v.rds"),     glue("Dr_No_≈T{temp_type}_v"),
+      glue("400samples_24parameters_19h_26042023_{plotnr}_SDT{temp_type}_v.rds"),     glue("Dr_No_σT{temp_type}_v"),
+      glue("400samples_24parameters_19h_26042023_{plotnr}_gradT{temp_type}_v.rds"),   glue("Dr_No_∇T{temp_type}_v"),
       ### Night
-      glue("400samples_23parameters_07h_26042023_{plotnr}_avT{temp_type}.rds"),     glue("Dr_Ni_≈T{temp_type}"),
-      glue("400samples_23parameters_07h_26042023_{plotnr}_SDT{temp_type}.rds"),     glue("Dr_Ni_σT{temp_type}"),
-      glue("400samples_23parameters_07h_26042023_{plotnr}_avT{temp_type}_v.rds"),     glue("Dr_Ni_≈T{temp_type}_v"),
-      glue("400samples_23parameters_07h_26042023_{plotnr}_SDT{temp_type}_v.rds"),     glue("Dr_Ni_σT{temp_type}_v"),
-      glue("400samples_23parameters_07h_26042023_{plotnr}_gradT{temp_type}_v.rds"),   glue("Dr_Ni_∇T{temp_type}_v"),
+      glue("400samples_24parameters_07h_26042023_{plotnr}_avT{temp_type}.rds"),     glue("Dr_Ni_≈T{temp_type}"),
+      glue("400samples_24parameters_07h_26042023_{plotnr}_SDT{temp_type}.rds"),     glue("Dr_Ni_σT{temp_type}"),
+      glue("400samples_24parameters_07h_26042023_{plotnr}_avT{temp_type}_v.rds"),     glue("Dr_Ni_≈T{temp_type}_v"),
+      glue("400samples_24parameters_07h_26042023_{plotnr}_SDT{temp_type}_v.rds"),     glue("Dr_Ni_σT{temp_type}_v"),
+      glue("400samples_24parameters_07h_26042023_{plotnr}_gradT{temp_type}_v.rds"),   glue("Dr_Ni_∇T{temp_type}_v"),
       ## Wet season
       ### Noon
-      glue("400samples_23parameters_19h_26112023_{plotnr}_avT{temp_type}.rds"),     glue("We_No_≈T{temp_type}"),
-      glue("400samples_23parameters_19h_26112023_{plotnr}_SDT{temp_type}.rds"),     glue("We_No_σT{temp_type}"),
-      glue("400samples_23parameters_19h_26112023_{plotnr}_avT{temp_type}_v.rds"),     glue("We_No_≈T{temp_type}_v"),
-      glue("400samples_23parameters_19h_26112023_{plotnr}_SDT{temp_type}_v.rds"),     glue("We_No_σT{temp_type}_v"),
-      glue("400samples_23parameters_19h_26112023_{plotnr}_gradT{temp_type}_v.rds"),   glue("We_No_∇T{temp_type}_v"),
+      glue("400samples_24parameters_19h_26112023_{plotnr}_avT{temp_type}.rds"),     glue("We_No_≈T{temp_type}"),
+      glue("400samples_24parameters_19h_26112023_{plotnr}_SDT{temp_type}.rds"),     glue("We_No_σT{temp_type}"),
+      glue("400samples_24parameters_19h_26112023_{plotnr}_avT{temp_type}_v.rds"),     glue("We_No_≈T{temp_type}_v"),
+      glue("400samples_24parameters_19h_26112023_{plotnr}_SDT{temp_type}_v.rds"),     glue("We_No_σT{temp_type}_v"),
+      glue("400samples_24parameters_19h_26112023_{plotnr}_gradT{temp_type}_v.rds"),   glue("We_No_∇T{temp_type}_v"),
       ### Night
-      glue("400samples_23parameters_07h_26112023_{plotnr}_avT{temp_type}.rds"),     glue("We_Ni_≈T{temp_type}"),
-      glue("400samples_23parameters_07h_26112023_{plotnr}_SDT{temp_type}.rds"),     glue("We_Ni_σT{temp_type}"),
-      glue("400samples_23parameters_07h_26112023_{plotnr}_avT{temp_type}_v.rds"),     glue("We_Ni_≈T{temp_type}_v"),
-      glue("400samples_23parameters_07h_26112023_{plotnr}_SDT{temp_type}_v.rds"),     glue("We_Ni_σT{temp_type}_v"),
-      glue("400samples_23parameters_07h_26112023_{plotnr}_gradT{temp_type}_v.rds"),   glue("We_Ni_∇T{temp_type}_v"),
+      glue("400samples_24parameters_07h_26112023_{plotnr}_avT{temp_type}.rds"),     glue("We_Ni_≈T{temp_type}"),
+      glue("400samples_24parameters_07h_26112023_{plotnr}_SDT{temp_type}.rds"),     glue("We_Ni_σT{temp_type}"),
+      glue("400samples_24parameters_07h_26112023_{plotnr}_avT{temp_type}_v.rds"),     glue("We_Ni_≈T{temp_type}_v"),
+      glue("400samples_24parameters_07h_26112023_{plotnr}_SDT{temp_type}_v.rds"),     glue("We_Ni_σT{temp_type}_v"),
+      glue("400samples_24parameters_07h_26112023_{plotnr}_gradT{temp_type}_v.rds"),   glue("We_Ni_∇T{temp_type}_v"),
     )
 
     ##########

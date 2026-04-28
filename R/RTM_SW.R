@@ -123,7 +123,7 @@ sw_two_stream <- function(soil_reflect, density, F_sky_diff, F_sky_dir, Kd, Kb, 
   light_beam_level = c(light_beam_level, NA)
   light_diff_level = c(light_diff_level, NA)
 
-  result <- data.frame(
+  return(list(
     layer = c(paste("layer", 1:n), "atmosphere"),
     density = density,
     F_d_down = round(down, 0),
@@ -131,9 +131,8 @@ sw_two_stream <- function(soil_reflect, density, F_sky_diff, F_sky_dir, Kd, Kb, 
     F_b_down = round(direct_radiation, 0),
     net_sw = c(round(net_sw, 0), 0),  # Net radiation in atmosphere is set to zero (no structure here)
     albedo = c(rep(' ', n), round( up[length(up)]/(F_sky_diff + F_sky_dir), 3 ) )
-  )
+  ))
 
-  return(result)
 
 }
 
@@ -159,66 +158,78 @@ sw_two_stream <- function(soil_reflect, density, F_sky_diff, F_sky_dir, Kd, Kb, 
 #' @importFrom suncalc getSunlightPosition
 #' @importFrom data.table as.data.table setorder
 #' @export
-
-
 shortwave_two_stream_RTM <- function(datetime, lat, lon, voxel_grid,
-                                     F_sky_diff_init, F_sky_dir_init,
-                                     omega_g_v,
-                                     Kd_v, Kb_v,
-                                     omega, betad, beta0) {
+                                          F_sky_diff_init, F_sky_dir_init,
+                                          omega_g_v,
+                                          Kd_v, Kb_v,
+                                          omega, betad, beta0) {
 
-  voxel_grid <- as.data.table(voxel_grid)
+  # extract vectors
+  X <- voxel_grid$X
+  Y <- voxel_grid$Y
+  Z <- voxel_grid$Z
+  density <- voxel_grid$density
 
-  # Calculate solar angles
-  calculate_sun_angle <- function(datetime, lat, lon) {
-    sun_angle <- getSunlightPosition(date = datetime, lat = lat, lon = lon)
-    sun_altitude <- sun_angle$altitude
-    sun_azimuth <- sun_angle$azimuth
-    in_eastern_half <- ifelse(sun_azimuth < 0, 1, 0)
-    # Is sun above the horizon?
-    # This is 1 if altitude is between 0 and pi/2 radians
-    above_horizon <- ifelse(sun_altitude >= 0, 1, 0)
-    return(list(above_horizon = above_horizon,
-                sun_altitude = sun_altitude, sun_azimuth = sun_azimuth))
-  }
+  n <- length(X)
 
-  sun_angles <- calculate_sun_angle(datetime, lat, lon)
+  # solar angles
+  sun_angle <- getSunlightPosition(date = datetime, lat = lat, lon = lon)
+  sun_altitude <- sun_angle$altitude
+  above_horizon <- as.integer(sun_altitude >= 0) # This is 1 if altitude is between 0 and pi/2 radians
 
-  ##########################
-  # Vertical shortwave RTM #
-  ##########################
-
-  # Diffuse radiation from canopy top
   F_sky_diff_v <- F_sky_diff_init
-  # Direct radiation from canopy top
-  F_sky_dir_v <<- F_sky_dir_init * sun_angles$above_horizon
+  F_sky_dir_v  <- F_sky_dir_init * above_horizon
 
-  # Calculate fluxes per unique XY combination
-  final_results_vertical <- voxel_grid[, {
-    # Number of layers
-    n_layers <- .N
+  # pre-allocation
+  F_d_down <- numeric(n)
+  F_d_up   <- numeric(n)
+  F_b_down <- numeric(n)
+  net_sw   <- numeric(n)
+
+  # precompute columns
+  xy_id <- X + Y * max(X)
+  split_idx <- split(seq_len(n), xy_id)
+
+  for (idx in split_idx) {
+
+    density_col <- density[idx]
+
+    ##########################
+    # Vertical shortwave RTM #
+    ##########################
 
     fluxes <- sw_two_stream(
-      soil_reflect = omega_g_v, density = density,
-      F_sky_diff = F_sky_diff_v, F_sky_dir = F_sky_dir_v,
-      Kd = Kd_v, Kb = Kb_v,
-      omega = omega, beta = betad, beta0 = beta0
+      soil_reflect = omega_g_v,
+      density = density_col,
+      F_sky_diff = F_sky_diff_v,
+      F_sky_dir = F_sky_dir_v,
+      Kd = Kd_v,
+      Kb = Kb_v,
+      omega = omega,
+      beta = betad,
+      beta0 = beta0
     )
 
-    .(X, Y, Z = seq_len(n_layers), density,
-      F_d_down = fluxes$F_d_down[1:n_layers],
-      F_d_up = fluxes$F_d_up[1:n_layers],
-      F_b_down = fluxes$F_b_down[1:n_layers],
-      net_sw = fluxes$net_sw[1:n_layers])
-  }, by = .(X, Y)]
+    n_layers <- length(idx)
 
+    F_d_down[idx] <- fluxes$F_d_down[1:n_layers]
+    F_d_up[idx]   <- fluxes$F_d_up[1:n_layers]
+    F_b_down[idx] <- fluxes$F_b_down[1:n_layers]
+    net_sw[idx]   <- fluxes$net_sw[1:n_layers]
+  }
 
-  setorder(final_results_vertical, X, Y, Z)
+  return(data.frame(
+    X = X,
+    Y = Y,
+    Z = Z,
+    density = density,
+    F_d_down = F_d_down,
+    F_d_up = F_d_up,
+    F_b_down = F_b_down,
+    net_sw = net_sw
+  ))
 
-  # Select relevant columns
-  final_results <- final_results_vertical[, .(X, Y, Z, density, F_d_down, F_d_up, F_b_down, net_sw)]
-
-  return(final_results)
 }
+
 
 

@@ -20,7 +20,6 @@
 #' @export
 run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
 
-
   #############################################
   # 2D SHORTWAVE RADIATIVE TRANSFER MODELLING #
   #############################################
@@ -65,62 +64,49 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
   infl_macro  <<- infl_macro_ref  # * u_eff / wind_factor
 
   ###########################################
-  # WIND MODULE                             #
+  # WIND MODULE
   ###########################################
 
-  u_top_ms <- u_top / 3.6 # conversion from km/h to m/s
+  # Convert wind speed from km/h to m/s
+  u_top_ms <- u_top / 3.6
 
-  u <- rep(NA, length(den))
+  # Create a grouping ID for each (x, y) column
+  # This replaces the need for looping over unique x-y combinations
+  xy_id <- interaction(x_coords, y_coords, drop = TRUE)
 
-  xy_unique <- unique(data.frame(x = x_coords, y = y_coords))
+  # Sort all voxels:
+  # - first by column (xy_id)
+  # - then by height (descending z → from canopy top downward)
+  ord <- order(xy_id, -z_coords)
 
-  for (i in 1:nrow(xy_unique)) {
+  # Apply sorting
+  xy_id_sorted <- xy_id[ord]
+  den_sorted <- den[ord]
 
-    x_val <- xy_unique$x[i]
-    y_val <- xy_unique$y[i]
+  # Replace NA density values with 0
+  den_sorted[is.na(den_sorted)] <- 0
 
-    idx <- which(x_coords == x_val & y_coords == y_val)
+  # Compute cumulative LAI per column (from top to bottom)
+  # This replaces the inner loop that builds LAI_cum
+  LAI_cum <- ave(den_sorted, xy_id_sorted, FUN = cumsum)
 
-    # sort hight to low
-    idx_sorted <- idx[order(z_coords[idx], decreasing = TRUE)]
+  # Determine where canopy starts in each column:
+  # TRUE from the first voxel with structure downward
+  has_canopy <- ave(den_sorted > 0, xy_id_sorted, FUN = function(x) cumsum(x) > 0)
 
-    z_col <- z_coords[idx_sorted]
-    den_col <- den[idx_sorted]
-    den_col[is.na(den_col)] <- 0
+  # Compute wind speed:
+  # - above canopy → u_top_ms
+  # - below canopy → attenuated exponentially based on cumulative LAI
+  # - enforce minimum wind speed of 0.2 m/s
+  u_sorted <- ifelse(
+    !has_canopy,
+    u_top_ms,
+    pmax(u_top_ms * exp(-k_u * LAI_cum), 0.2)
+  )
 
-    # canopy top = first voxel with structure
-    canopy_idx <- which(den_col > 0)[1]
-
-    if (is.na(canopy_idx)) {
-      # no forest = u_top everywhere
-      u[idx_sorted] <- u_top_ms
-      next
-    }
-
-    # LAI from canopy downward
-    LAI_cum <- rep(0, length(idx_sorted))
-
-    for (j in canopy_idx:length(idx_sorted)) {
-      if (j == canopy_idx) {
-        LAI_cum[j] <- den_col[j]
-      } else {
-        LAI_cum[j] <- LAI_cum[j-1] + den_col[j]
-      }
-    }
-
-    for (j in 1:length(idx_sorted)) {
-
-      if (j < canopy_idx) {
-        # above canopy
-        u[idx_sorted[j]] <- u_top_ms
-
-      } else {
-        # below canopy
-        u_val <- u_top_ms * exp(-k_u * LAI_cum[j])
-        u[idx_sorted[j]] <- max(u_val, 0.2) # 0.2 m/s is set as minimum wind speed
-      }
-    }
-  }
+  # Reorder results back to original voxel order
+  u <- numeric(length(den))
+  u[ord] <- u_sorted
 
   ###########################################
   # CONDUCTANCES                            #
@@ -165,6 +151,17 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
     temperature = macro_temp,
     T_soil = macro_temp
   )
+
+  # Inverse optical depth and auxiliary variables for longwave RTM
+  mu_lw <- ifelse(den == 0, 1, 1 / (Kd_lw_v * den))
+  n = length(den)
+  gamma_plus_lw <<- rep(0.5 * (1 + sqrt((1 - omega_lw) / (1 - (1 - 2 * beta_lw) * omega_lw))) , n)
+  gamma_plus_lw[n+1] <<- 1
+  gamma_minus_lw <<- rep(0.5 * (1 - sqrt((1 - omega_lw) / (1 - (1 - 2 * beta_lw) * omega_lw))) , n)
+  gamma_minus_lw[n+1] <<- 0
+  lambda_lw <<- sqrt((1 - (1 - 2 * beta_lw) * omega_lw) * (1 - omega_lw) / (mu_lw)^2)
+  lambda_lw[n+1] <<- 0
+
   final_results_lw = longwave_two_stream_RTM(voxel_grid, micro_grid, lw_two_stream,
                                              F_sky_lw, omega_g_lw_v, macro_temp,
                                              Kd_lw_v, omega_lw, beta_lw)
@@ -275,6 +272,7 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
     dt <- 1
     T_air_vec = T_air_vec - calculate_D(T_air_vec, micro_grid$T_ground) * dt / (Cp * V * rho)
 
+
     ######################
     # SENSIBLE HEAT FLUX #
     ######################
@@ -316,22 +314,46 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
     micro_grid$temperature <- micro_grid$temperature - ifelse(energy_balance_surf == 0, 0, W*energy_balance_surf/de_dT_PM(micro_grid$temperature, T_air_vec, net_radiation, G_voxel, latent_flux_res$gamma_eff) )
 
     # Determine planes-averaged surface temperature (to be used in T_air_Vec update for zero-density voxels).
-    micro_grid <- micro_grid |>
-      group_by(z) |>
-      mutate(mean_temp_z = mean(temperature[den>0], na.rm = TRUE)) |>
-      ungroup()
-    micro_grid <- micro_grid |>
-      group_by(y) |>
-      mutate(mean_temp_y = mean(temperature[den>0], na.rm = TRUE)) |>
-      ungroup()
-    micro_grid <- micro_grid |>
-      group_by(x) |>
-      mutate(mean_temp_x = mean(temperature[den>0], na.rm = TRUE)) |>
-      ungroup()
-    micro_grid$mean_temp = (micro_grid$mean_temp_x + micro_grid$mean_temp_y + micro_grid$mean_temp_z)/3
+    # micro_grid <- micro_grid |>
+    #   group_by(z) |>
+    #   mutate(mean_temp_z = mean(temperature[den>0], na.rm = TRUE)) |>
+    #   ungroup()
+    # micro_grid <- micro_grid |>
+    #   group_by(y) |>
+    #   mutate(mean_temp_y = mean(temperature[den>0], na.rm = TRUE)) |>
+    #   ungroup()
+    # micro_grid <- micro_grid |>
+    #   group_by(x) |>
+    #   mutate(mean_temp_x = mean(temperature[den>0], na.rm = TRUE)) |>
+    #   ungroup()
+    # micro_grid$mean_temp = (micro_grid$mean_temp_x + micro_grid$mean_temp_y + micro_grid$mean_temp_z)/3
+
+    temp <- micro_grid$temperature
+    mask<- as.numeric(den > 0)
+
+    # --- Z direction ---
+    sum_z   <- rowsum(temp * mask, z_coords)
+    count_z <- rowsum(mask, z_coords)
+    mean_z  <- sum_z / count_z
+    mean_temp_z <- mean_z[z_coords]
+
+    # --- Y direction ---
+    sum_y   <- rowsum(temp * mask, y_coords)
+    count_y <- rowsum(mask, y_coords)
+    mean_y  <- sum_y / count_y
+    mean_temp_y <- mean_y[y_coords]
+
+    # --- X direction ---
+    sum_x   <- rowsum(temp * mask, x_coords)
+    count_x <- rowsum(mask, x_coords)
+    mean_x  <- sum_x / count_x
+    mean_temp_x <- mean_x[x_coords]
+
+    # --- Combine ---
+    mean_temp <- (mean_temp_x + mean_temp_y + mean_temp_z) / 3
 
     # Air temperature update based on a linearization as is done in microclimc (Maclean & Klinges, 2021).
-    T_air_vec <- ( w_macro_z*g_macro * macro_temp + w_soil*g_soil * micro_grid$T_ground + ifelse(den == 0, w_forest*g_forest * micro_grid$mean_temp, w_forest*g_forest *micro_grid$temperature) )/ ( w_macro_z*g_macro + w_soil*g_soil + w_forest*g_forest)
+    T_air_vec <- ( w_macro_z*g_macro * macro_temp + w_soil*g_soil * micro_grid$T_ground + ifelse(den == 0, w_forest*g_forest * mean_temp, w_forest*g_forest *micro_grid$temperature) )/ ( w_macro_z*g_macro + w_soil*g_soil + w_forest*g_forest)
 
   }
 
