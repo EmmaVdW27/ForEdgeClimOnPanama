@@ -6,6 +6,8 @@ Changes_with_ForEdgeClimv1.0.txt
 profile.out
 Scripts/test_chunks.R
 Scripts/Sobol_indices_wet_night.R
+Scripts/test_compairing_RH_sources.R
+parameter_distributions_from_literature.xlsx
 Data/*
 !Data/TLS_scaled_DTM_and_grid_C13_Panama.rds
 !Data/TLS_scaled_DTM_and_grid_R11_Panama.rds

@@ -2,16 +2,16 @@
 % Please edit documentation in R/import_observations.R
 \name{import_rad_observations}
 \alias{import_rad_observations}
-\title{Function to import radiative observations (direct and diffuse shortwave and longwave radiation)}
+\title{Function to import radiative observations (direct and diffuse shortwave and longwave radiation and measured PAR)}
 \usage{
-import_rad_observations(datetime)
+import_rad_observations(time)
 }
 \arguments{
-\item{datetime}{yyyy-mm-dd hh:mm:ss in UTC}
+\item{time}{yyyy-mm-dd hh:mm:ss in UTC}
 }
 \value{
-Direct-beam and diffuse shortwave and longwave radiation
+Direct-beam and diffuse shortwave and longwave radiation and PAR measurements
 }
 \description{
-Function to import radiative observations (direct and diffuse shortwave and longwave radiation)
+Function to import radiative observations (direct and diffuse shortwave and longwave radiation and measured PAR)
 }

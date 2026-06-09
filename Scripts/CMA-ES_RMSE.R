@@ -37,19 +37,21 @@ plotnr = "C13" # C13 or R11
 
 # We calibrate on 12 days - selected over the 12 months, capturing both seasons
 
-date_string <- 'C13_year_50_generations'
-max_it        <- 49     # generations (there will be max_it + 1 generations)
+date_string <- 'C13_year_30_generations'
+max_it        <- 29     # generations (there will be max_it + 1 generations)
 
-# 1. Second day of each month in 2023
-first_days <- seq(
-  from = as.Date("2023-01-02"),
-  to   = as.Date("2023-12-02"),
-  by   = "month"
-)
+# 4 selected calibration days, resp. most sunny and sun-variable day, most humid and diffuse light day, most windy day, and
+# day with most day-night temperature difference
+selected_days <- as.Date(c(
+  "2023-03-28",
+  "2023-11-12",
+  "2023-12-21",
+  "2023-06-05"
+))
 
-# 2. For each day: 24 hours (0–23h)
+# For each day: 24 hours (0–23h)
 datetimes <- unlist(
-  lapply(first_days, function(d) {
+  lapply(selected_days, function(d) {
     seq(
       from = as.POSIXct(paste0(d, " 00:00:00"), tz = "UTC"),
       to   = as.POSIXct(paste0(d, " 23:00:00"), tz = "UTC"),
@@ -86,21 +88,21 @@ if(plotnr == "C13"){
 # PARAMETER NAMES & DEFAULTS
 # -----------------
 # Key parameters
-param_names <- c("wind_factor", "infl_macro_ref", "infl_soil_ref")
+param_names <- c("infl_macro_ref", "infl_soil_ref", "g_macro_ref", "e_forest", "u_ref", "k_soil")
 # Fixed parameters (SW RTM)
 betad <<- 0.325; beta0 <<- 0.325; omega <<- 0.52; Kd_v <<- 0.775; Kb_v <<- 1.25; omega_g_v <<- 0.13;
 # Fixed parameters (LW RTM)
-e_forest <<- 0.965; beta_lw <<- 0.325; omega_lw <<- 0.035; Kd_lw_v <<- 0.3; omega_g_lw_v <<- 0.055;
+beta_lw <<- 0.325; omega_lw <<- 0.035; Kd_lw_v <<- 0.3; omega_g_lw_v <<- 0.055;
 # Fixed parameters (HEAT)
-h <<- 10; g_macro_ref <<- 25; infl_forest_ref <<- 5; g_forest_ref <<- 12.5; p_ground <<- 0.225; g_soil_ref <<- 10; k_soil <<- 1.225;
-gs_max <<- 0.5; stomata_closure <<- 0.8
+h <<- 10; infl_forest_ref <<- 5; g_forest_ref <<- 12.5; p_ground <<- 0.225; g_soil_ref <<- 10;
+gs_max <<- 0.004; stomata_closure <<- 0.75; k_u <<- 0.7
 
 # Initial values (mean value from uniform parameter distributions)
-start_vals <- c(5.25,32.5,5)
+start_vals <- c(32.5, 5, 25, 0.965, 1.6, 1.225)
 
 # Bounds
-lower_bounds <- c(0.5,5,0)
-upper_bounds <- c(10,60,10)
+lower_bounds <- c(5, 0, 10, 0.94, 0.2, 0.25)
+upper_bounds <- c(60, 10, 40, 0.99, 3, 2.2)
 
 
 # -----------------
@@ -110,15 +112,53 @@ create_input_drivers()
 
 create_physical_constants()
 
-
-
 # State for logging without monitor callbacks
 .eval_counter <- 0L # variable accessible in multiple functions '.' is a convention: 'do not touch'
 
 # Helper to set parameters
 set_params_from_vec <- function(par) {
-  wind_factor <<- par[1]; infl_macro_ref <<- par[2]; infl_soil_ref <<- par[3]
+  infl_macro_ref <<- par[1]; infl_soil_ref <<- par[2]; g_macro_ref <<- par[3]; e_forest <<- par[4]; u_ref <<- par[5]; k_soil <<- par[6]
 }
+
+
+# -----------------
+# PRECOMPUTE & CACHE TOMST OBSERVATIONS
+# -----------------
+cat("\nPrecomputing TOMST observation files...\n")
+
+obs_data <- list()
+
+grid_base <- voxel_TLS$grid
+grid_base$density <- grid_base$density * scale_factor
+
+# start_vals as temporary vals
+set_params_from_vec(start_vals)
+
+for (dt in datetimes) {
+
+  datetime <- as.POSIXct(dt, tz = "UTC")
+  key <- format(datetime, "%Y%m%d_%H")
+
+  file <- paste0("Data/microtemp_air_obs_", key, "_", plotnr, ".csv")
+
+  # Only generate if not yet existing
+  if (!file.exists(file)) {
+    cat("Generating:", key, "\n")
+
+    # imports
+    import_temp_observations(datetime)
+    import_rad_observations(datetime)
+    import_RH_u_observations(datetime)
+
+    # run model once (met tijdelijke parameters)
+    run_foredgeclim(grid_base, datetime)
+  }
+
+  # read once into memory
+  obs_data[[key]] <- data.table::fread(file)
+}
+
+cat("TOMST data preloaded in memory.\n")
 
 # evaluator that does everything (RMSE, R2, ME, NSE and SD)
 evaluate_par <- function(par) {
@@ -148,14 +188,13 @@ evaluate_par <- function(par) {
 
         # ---- Observations ----
         key <- format(datetime, "%Y%m%d_%H")
-        TOMST <- read.csv(paste0("Data/microtemp_air_obs_", key, "_", plotnr, ".csv"))
+        TOMST <- obs_data[[key]]
+        #TOMST <- read.csv(paste0("Data/microtemp_air_obs_", key, "_", plotnr, ".csv"))
 
         # ---- Model extraction ----
         temp_air_grid <- micro_grid
         temp_air_grid$temperature <- air_temp - 273.15
-        temp_air_grid <- temp_air_grid %>%
-          filter(z == 1) %>%
-          select(x, y, temperature)
+        temp_air_grid <- temp_air_grid[temp_air_grid$z == 1, c("x","y","temperature")]
 
         # search nearest neighbour
         # matrix with grid coords
@@ -286,6 +325,7 @@ compute_metrics <- function(par) {
 wrapped_obj_fn <- function(x) {
   rmse <- compute_rmse(x)
   .eval_counter <<- .eval_counter + 1L
+  setTxtProgressBar(pb, .eval_counter)
   # infer generation and offspring id from eval count and lambda
   gen <- 1L + floor((.eval_counter - 1L) / lambda)
   off <- 1L + ((.eval_counter - 1L) %% lambda)
@@ -346,6 +386,10 @@ generation_log <- tibble::tibble(
 # Choose lambda if not provided
 if (is.null(lambda)) lambda <- 4 + floor(3 * log(dim_par))
 
+# progress bar settings
+total_evals <- lambda * (max_it + 1)
+pb <- txtProgressBar(min = 0, max = total_evals, style = 3)
+
 # initial sigma heuristic (initial global step size)
 init_sigma <- 0.3 * mean(upper_bounds - lower_bounds)
 
@@ -376,6 +420,8 @@ res <- cmaesr::cmaes(
 )
 
 saveRDS(res, file = results_output_file)
+
+close(pb)
 
 # -----------------
 # DERIVE GENERATION-LEVEL LOG FROM OFFSPRING LOG

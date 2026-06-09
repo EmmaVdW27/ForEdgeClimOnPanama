@@ -6,8 +6,9 @@
 create_input_drivers <- function() {
 
   # input files
-  temp_input_file_rds <<- readRDS("Data/TMS_macro_2023_C13_and_R11.rds")
+  temp_input_file_rds <<- readRDS("Data/TMS_macro_2023_C13_R11_R07_C08.rds")
   rad_input_file_csv <<- "Data/Table_CNR1_2023.dat"
+  PAR_input_file_rds <<- readRDS("Data/PAR_data_full_2023.rds")
   sensor_locations <<- read_excel("Data/sensor_locations_all_plots.xlsx")
   RH_input_file_csv <<- "Data/bci_cl_rh_elect.csv"
   u_input_file_csv <<- "Data/bci_ava_ws_elect.csv"
@@ -97,11 +98,11 @@ create_model_parameters <- function() {
 
 
   # PM LE parameters
-  gs_max <<- 0.05
-  stomata_closure <<- 0.6
+  gs_max <<- 0.004  # maximal stomatal conductance (mol/m2/s)
+  stomata_closure <<- 0.75 # stomatal closure parameter that controls the sensitivity of stomatal conductance to increasing VPD (dimensionless)
 
   # g(u) parameters
-  k_u <<- 0.2 # wind attenuation coefficient (dimensionless)
-  u_ref <<- 0.3 # typical wind speed around forests (above and below canopy) (m/s)
+  k_u <<- 0.7 # wind attenuation coefficient (dimensionless)
+  u_ref <<- 1.6 # typical wind speed around forests (above and below canopy) (m/s)
 }
 

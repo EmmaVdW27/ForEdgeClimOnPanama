@@ -31,32 +31,30 @@ start_analysis <- Sys.time()
 
 plotnr = "C13" # C13 or R11
 
-season_string = "C13_calibrated" # C13 R11 |_uncalibrated
+season_string = "C13_uncalibrated" # C13 or R11 | _calibrated or _uncalibrated
 
 params = list(
-  # Calibrated parameters (HEAT)
-  wind_factor = 5.5, infl_macro_ref = 32.5, infl_soil_ref = 5,
-  # C13: wind_factor = 7.19, infl_macro_ref = 59.9, infl_soil_ref = 9.88,
-  # R11: wind_factor = 5.55, infl_macro_ref = 57.98, infl_soil_ref = 9.55,
-  # uncalibrated, fixed values: wind_factor = 5.5, infl_macro_ref = 32.5, infl_soil_ref = 5,
+  # (Un)calibrated parameters
+  infl_macro_ref = 32.5, infl_soil_ref = 5, g_macro_ref = 25, e_forest = 0.965, u_ref = 1.6, k_soil = 1.225,
+  # C13:
+  # R11:
 
   # Fixed parameters (SW RTM)
   betad = 0.325, beta0 = 0.325, omega = 0.52, Kd_v = 0.775, Kb_v = 1.25, omega_g_v = 0.13,
-  Kd_h = 0.725, Kb_h = 1.15, omega_g_h = 0.15,
   # Fixed parameters (LW RTM)
-  e_forest = 0.965, beta_lw = 0.325, omega_lw = 0.035, Kd_lw_v = 0.3, omega_g_lw_v = 0.055, Kd_lw_h = 0.3, omega_g_lw_h = 0.035,
+  beta_lw = 0.325, omega_lw = 0.035, Kd_lw_v = 0.3, omega_g_lw_v = 0.055,
   # Fixed parameters (HEAT)
-  h = 10, p_ground = 0.225, k_soil = 1.225,
+  h = 10, p_ground = 0.225,
 
   # g and i
-  g_macro_ref = 25,
   g_forest_ref = 12.5,
   g_soil_ref = 10,
   infl_forest_ref = 5,
 
-  # PM LE parameters
-  gs_max = 0.5,
-  stomata_closure = 0.75
+  # PM LE and wind parameters
+  gs_max = 0.004,
+  stomata_closure = 0.75,
+  k_u = 0.7
 
 
 )
@@ -90,7 +88,6 @@ if(plotnr == "C13"){
 # -----------------
 # VALIDATION: STATISTICAL COMPARISON MODEL VS OBSERVATIONS
 # -----------------
-
 # Parallelize
 parts <- future_lapply(
   all_datetimes,

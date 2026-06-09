@@ -1,6 +1,6 @@
 #' Function to import temperatures from observations
 #'
-#' @param datetime yyyy-mm-dd hh:mm:ss in UTC
+#' @param time yyyy-mm-dd hh:mm:ss in UTC
 #' @return macrotemperature, soil temperature, microtemperatures
 #' @importFrom lubridate floor_date with_tz dmy_hms
 #' @importFrom dplyr mutate group_by summarise select
@@ -13,7 +13,9 @@ import_temp_observations <- function(time){
     mutate(datetime_UTC_hour = floor_date(datetime, unit = "hour")) # datetime_UTC, floor the datetimes
 
   # only keep plot of interest
-  temp_input_file <- temp_input_file[temp_input_file$plot == plotnr, ]
+  temp_input_file <- temp_input_file[
+    sub("^([A-Z])0+", "\\1", temp_input_file$plot) == plotnr,
+  ]
 
   # only keep datetime of interest
   temp_input_file <- temp_input_file[temp_input_file$datetime_UTC_hour == time, ]
@@ -47,16 +49,17 @@ import_temp_observations <- function(time){
 
 }
 
-#' Function to import radiative observations (direct and diffuse shortwave and longwave radiation)
+#' Function to import radiative observations (direct and diffuse shortwave and longwave radiation and measured PAR)
 #'
-#' @param datetime yyyy-mm-dd hh:mm:ss in UTC
-#' @return Direct-beam and diffuse shortwave and longwave radiation
-#' @importFrom lubridate floor_date with_tz
-#' @importFrom dplyr mutate
+#' @param time yyyy-mm-dd hh:mm:ss in UTC
+#' @return Direct-beam and diffuse shortwave and longwave radiation and PAR measurements
+#' @importFrom lubridate floor_date with_tz force_tz
+#' @importFrom dplyr mutate rename select filter group_by left_join
 #' @importFrom readr read_csv read_lines cols col_character
 #' @export
-import_rad_observations <- function(datetime){
+import_rad_observations <- function(time){
 
+  # TOP CANOPY RADIATION
   # read column names
   hdr <- read_lines(rad_input_file_csv, n_max = 2)[2]
   col_names <- read_csv(I(hdr), col_names = FALSE, show_col_types = FALSE) |>
@@ -73,7 +76,7 @@ import_rad_observations <- function(datetime){
     mutate(TIMESTAMP_UTC_hour = floor_date(TIMESTAMP_UTC, unit = "hour")) # floor the TIMESTAMPs
 
   # only keep datetime of interest
-  rad_input_file <- rad_input_file[rad_input_file$TIMESTAMP_UTC_hour == datetime, ]
+  rad_input_file <- rad_input_file[rad_input_file$TIMESTAMP_UTC_hour == time, ]
 
   # mutate data set: calculate mean values
   # REMARK: Up and Dn (Down) refer to the direction in which the sensor is looking, so Up measure the downward radiation
@@ -101,11 +104,64 @@ import_rad_observations <- function(datetime){
   # LONGWAVE RADIATION OUTGOING
   F_sky_lw_out <<- rad_input_file_mean$CG3DnCo_Avg  # in W/m²
 
+  # BELOW CANOPY RADIATION
+  sensor_locations <- sensor_locations |>
+    mutate(
+      plotnr_clean = gsub("plot0?", "", plot)
+    ) |>
+    filter(plotnr_clean == plotnr)
+
+  # rename datetime column and create UTC datetime
+  PAR_obs <- PAR_input_file_rds |>
+    rename(datetime_EST = datetime) |>
+    mutate(
+      datetime_EST = force_tz(datetime_EST, tzone = "EST"),
+      datetime_UTC = with_tz(datetime_EST, tzone = "UTC"),
+      datetime_UTC = floor_date(datetime_UTC, unit = "hour"),
+      location_ID_number = as.character(location_ID_number)
+    ) |>
+
+    # keep only relevant columns
+    select(
+      radiation_mean,
+      mean_ratio,
+      plotNumber,
+      datetime_UTC,
+      location_ID_number
+    ) |>
+
+    # keep only requested plotnr
+    filter(plotNumber == substr(plotnr, 2, nchar(plotnr))) |>
+
+    # calculate hourly means per sensor
+    group_by(location_ID_number, plotNumber, datetime_UTC) |>
+    summarise(
+      radiation_mean = mean(radiation_mean, na.rm = TRUE),
+      mean_ratio = mean(mean_ratio, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+
+    # keep only requested timestep
+    filter(datetime_UTC == time) |>
+
+    # add sensor locations
+    left_join(
+      sensor_locations |> select(SN, x, y),
+      by = c("location_ID_number" = "SN")
+    )
+
+  # save as csv
+  write.csv(
+    PAR_obs,
+    paste0("Data/PAR_obs_", format(time, "%Y%m%d_%H"), "_", plotnr, ".csv"),
+    row.names = FALSE
+  )
+
 }
 
 #' Function to import relative humidity and wind speed observations from BCI stations: Lutz tower and clearing
 #'
-#' @param datetime yyyy-mm-dd hh:mm:ss in UTC
+#' @param time yyyy-mm-dd hh:mm:ss in UTC
 #' @return RH relative humidity
 #' @return u_top wind speed above canopy
 #' @importFrom lubridate floor_date with_tz dmy_hms

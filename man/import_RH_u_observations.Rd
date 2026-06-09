@@ -7,7 +7,7 @@
 import_RH_u_observations(time)
 }
 \arguments{
-\item{datetime}{yyyy-mm-dd hh:mm:ss in UTC}
+\item{time}{yyyy-mm-dd hh:mm:ss in UTC}
 }
 \value{
 RH relative humidity

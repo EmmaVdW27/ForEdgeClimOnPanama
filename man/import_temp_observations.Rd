@@ -7,7 +7,7 @@
 import_temp_observations(time)
 }
 \arguments{
-\item{datetime}{yyyy-mm-dd hh:mm:ss in UTC}
+\item{time}{yyyy-mm-dd hh:mm:ss in UTC}
 }
 \value{
 macrotemperature, soil temperature, microtemperatures

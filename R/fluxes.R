@@ -112,7 +112,7 @@ saturated_vapor_pressure <- function(temp) {
 calculate_LE_PM_C <- function(T_surf_C, T_air_C, SW_down, net_rad, G) {
 
   # aerodynamic conductance
-  ga <- g_forest
+  ga <- g_forest#/Cp/rho
 
   # --- 1. absolute vapour pressure from macro conditions ---
   ea <- saturated_vapor_pressure(macro_temp - 273.15) * (RH / 100)

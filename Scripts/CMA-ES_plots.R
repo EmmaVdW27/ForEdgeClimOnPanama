@@ -18,7 +18,7 @@ start_analysis <- Sys.time()
 # -----------------
 # INPUT
 # -----------------
-season = "R11_RMSE_50_"
+season = "R11_60_generations_5_params"
 
 number_of_params = 3
 
@@ -26,9 +26,9 @@ number_of_params = 3
 # PLOTS — Convergence visuals
 # -----------------
 
-offspring_log <- read.csv(paste0("Output/calibration/data/logging_offspring_", season, "generations.csv"))
-generation_log <- read.csv(paste0("Output/calibration/data/logging_generation_", season, "generations.csv"))
-res <- readRDS(paste0("Output/calibration/data/calibration_results_", season, "generations.rds"))
+offspring_log <- read.csv(paste0("Output/calibration/data/logging_offspring_", season, ".csv"))
+generation_log <- read.csv(paste0("Output/calibration/data/logging_generation_", season, ".csv"))
+res <- readRDS(paste0("Output/calibration/data/calibration_results_", season, ".rds"))
 output_path <- "Output/calibration/plots/"
 lambda <- 4 + floor(3 * log(number_of_params))
 
@@ -80,7 +80,7 @@ p_RMSE <- ggplot() +
   )
 
 print(p_RMSE)
-ggsave(paste0(output_path, "RMSE_", season, ".png"), plot = p_RMSE, width = 16, height = 10, dpi = 500)
+ggsave(paste0(output_path, season, ".png"), plot = p_RMSE, width = 16, height = 10, dpi = 500)
 
 
 

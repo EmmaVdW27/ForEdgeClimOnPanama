@@ -28,7 +28,7 @@ base_plot <- "R11"   # C13 or R11
 # Build file map: names = model label, values = plot-string used in filenames
 plot_map <- c(
   uncalibrated = paste0(base_plot, "_uncalibrated"),
-  calibrated   = paste0(base_plot, "_calibrated")
+  calibrated   = paste0(base_plot, "_30_gens_5_params_calibrated")
 
 )
 

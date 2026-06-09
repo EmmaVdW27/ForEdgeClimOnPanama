@@ -30,9 +30,17 @@ temps = c("a", "f")      # a or f ~ air or forest surface temperature
 
 # paths:
 
-input_path <- "Output/sensitivity_analysis/data/"
+input_path <- "Output/sensitivity_analysis/data/v2.0/"
 output_path_plots <- "Output/sensitivity_analysis/plots_output/"
 output_path_numbers <- "Output/sensitivity_analysis/numbers_output/"
+
+read_safe <- function(path) {
+  if (file.exists(path)) {
+    readRDS(path)
+  } else {
+    return(NULL)
+  }
+}
 
 for(plotnr in plots){
   for(temp_type in temps){
@@ -90,10 +98,9 @@ for(plotnr in plots){
       "gs_max", "stomata_closure", "k_u", "u_ref"
     )
     # Focused parameter sequence in order from most influential to least influential (to be plot in this order)
-    focus_params <- c("infl_macro_ref", "infl_soil_ref", "g_macro_ref",
-                      "g_soil", "infl_forest_ref", "k_soil",
-                       "h", "p_ground", "g_forest_ref",
-                      "gs_max", "stomata_closure", "k_u", "u_ref")
+    focus_params <- c("infl_soil_ref", "infl_macro_ref",  "g_macro_ref",
+                      "u_ref", "infl_forest_ref", "k_soil", "k_u",
+                      "p_ground", "g_soil_ref", "h", "stomata_closure", "g_forest_ref", "gs_max")
     # Shortwave parameter sequence
     SW_params <- c("betad", "beta0", "omega", "Kd_v", "Kb_v", "omega_g_v")
     # Longwave parameter sequence
@@ -103,16 +110,18 @@ for(plotnr in plots){
       "#3B4CC0",  # deep blue
       "#5E7FDB",  # blue
       "#F4A259",  # orange
-      "#F7C58A",  # light orange
+      "purple",   # purple
       "#87AFDE",  # light blue
       "#D62828",  # red
+      "pink",     # pink
       "#6A040F",  # very dark red
+      "#F7C58A",  # light orange
       "#A4161A",  # dark red
-      "#E98B1E",  # deep orange
       "darkgreen", # dark green
-      "lightgreen",
-      "purple",   # purple
-      "pink"     # pink
+      "#E98B1E",  # deep orange
+      "lightgreen"
+
+
     )
 
 
@@ -148,11 +157,14 @@ for(plotnr in plots){
 
     # Load, combine and normalize
     sobol_df <- files_info %>%
-      mutate(data = map(file, ~ readRDS(file.path(input_path, .x)))) %>%
+      mutate(full_path = file.path(input_path, file)) %>%
+      mutate(data = map(full_path, read_safe)) %>%
+      filter(!map_lgl(data, is.null)) %>%
       mutate(S = map(data, ~ .x$T$original)) %>%
       select(label, S) %>%
-      unnest(S) %>%
-      mutate(parameter = rep(param_order, times = nrow(.) / length(param_order))) %>%
+      mutate(S = map(S, ~ setNames(.x, param_order))) %>%  # 🔥 key fix
+      unnest_longer(S, values_to = "value", indices_to = "parameter") %>%
+      rename(S = value) %>%
       group_by(label) %>%
       mutate(norm_value = pmax(0, S) / sum(pmax(0, S))) %>%
       ungroup() %>%
@@ -261,19 +273,58 @@ for(plotnr in plots){
         fill = "Parameter"
       ) +
       theme_bw(base_size = 14) +
-      guides(fill = guide_legend(ncol = 1, reverse = TRUE)) +
+      guides(
+        fill = guide_legend(
+          override.aes = list(
+            fill = if (temp_type == "a") "white" else all_colors,
+            colour = if (temp_type == "a") "white" else all_colors
+          ),
+          ncol = 1,
+          reverse = TRUE
+        )
+      ) +
       theme(
         plot.title = element_text(size = 40),
-        axis.title    = element_text(size = 40),
-        axis.text     = element_text(size = 40),
+        axis.title = element_text(size = 40),
+        axis.text  = element_text(size = 40),
+
         legend.position = "right",
         legend.direction = "vertical",
-        legend.title    = element_text(size = 40),
-        legend.text     = element_text(size = 40),
+
+        # keep legend space but make invisible
+        legend.title = if (temp_type == "a") {
+          element_text(colour = "white", size = 40)
+        } else {
+          element_text(size = 40)
+        },
+
+        legend.text = if (temp_type == "a") {
+          element_text(colour = "white", size = 40)
+        } else {
+          element_text(size = 40)
+        },
+
+        legend.key = if (temp_type == "a") {
+          element_rect(fill = "white", colour = "white")
+        } else {
+          element_rect()
+        },
+
+        legend.background = element_rect(fill = "white", colour = "white"),
+
         legend.key.size = unit(1.0, "cm"),
         legend.spacing.x = unit(0.5, "cm"),
+
         strip.text = element_text(size = 40),
-        plot.caption = element_text(hjust = 0)
+        plot.caption = element_text(hjust = 0),
+        scale_fill_manual(
+          values = if (temp_type == "a") {
+            setNames(rep("white", length(all_colors)), names(all_colors))
+          } else {
+            all_colors
+          },
+          labels = labels_expr
+        )
       )
 
     ggsave(paste0(output_path_plots, output_plot_focused_parameters_by_condition_normalized), plot = p_condition_focused_n, width = 16, height = 14, dpi = 500)
