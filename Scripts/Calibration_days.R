@@ -4,10 +4,41 @@ library(dplyr)
 library(lubridate)
 library(readr)
 
+# ---- PAR availability filter ----
+par_data <- readRDS("Data/PAR_data_full_2023.rds") %>%
+  filter(plot %in% c("8C", "7R")) %>%
+  mutate(
+    datetime_est = force_tz(datetime, tzone = "EST"),
+    datetime_utc = with_tz(datetime_est, tzone = "UTC"),
+    date = as.Date(datetime_utc),
+    datetime_hour = floor_date(datetime_utc, "hour")
+  )
+
+valid_par_dates <- par_data %>%
+  filter(!is.na(radiation_mean)) %>%
+  group_by(date, plot, datetime_hour) %>%
+  summarise(
+    n_obs = n(),
+    .groups = "drop"
+  ) %>%
+  filter(n_obs >= 10) %>%   # at least 10 observations = sensors per hour
+  group_by(date, plot) %>%
+  summarise(
+    n_good_hours = n(),
+    .groups = "drop"
+  ) %>%
+  tidyr::pivot_wider(
+    names_from = plot,
+    values_from = n_good_hours,
+    values_fill = 0
+  ) %>%
+  filter(`8C` >= 12, # at least 12h per day = daytime hours
+         `7R` >= 12) %>%
+  pull(date)
+
 # ---- TEMPERATURE ----
-temp_data <- readRDS("Data/TMS_macro_2023_C13_and_R11.rds") %>%
-  mutate(datetime_hour = floor_date(datetime, "hour")) %>%
-  filter(plot == plotnr)
+temp_data <- readRDS("Data/TMS_macro_2023_C13_R11_R07_C08.rds") %>%
+  mutate(datetime_hour = floor_date(datetime, "hour"))
 
 temp_hourly <- temp_data %>%
   group_by(datetime_hour) %>%
@@ -65,7 +96,7 @@ hourly_data <- temp_hourly %>%
 
 df_daily <- hourly_data %>%
   group_by(date) %>%
-  filter(sum(!is.na(Tair)) >= 20) %>%  # minstens 20 uren met data
+  filter(sum(!is.na(Tair)) >= 20) %>%  # at least 20h of data
   summarise(
     sw_mean = mean(SW_total, na.rm = TRUE),
     sw_sd   = sd(SW_total, na.rm = TRUE),
@@ -83,6 +114,10 @@ df_daily <- hourly_data %>%
 
     .groups = "drop"
   )
+
+# make sure there is PAR data
+df_daily <- df_daily %>%
+  filter(date %in% valid_par_dates)
 
 # ---- 1. Sunny and variable----
 day_sunny_variable <- df_daily %>%

@@ -17,8 +17,8 @@ start_script = Sys.time()
 #########
 plotnr <- "C8" # C13,  R11, R7 or C8
 
-start_time <- as.POSIXct("2023-04-26 19:00:00", tz = "UTC") # first hour you want to run the model for
-end_time <- start_time   # last hour you want to run the model for
+start_time <- as.POSIXct("2023-04-26 11:00:00", tz = "UTC") # first hour you want to run the model for
+end_time <- as.POSIXct("2023-04-26 22:00:00", tz = "UTC")   # last hour you want to run the model for
 datetime_series <- seq(start_time, end_time, by = "hour")   # ForEdgeClim is run for all the hours between the first and last hour
 
 #########
@@ -97,24 +97,24 @@ for (current_datetime in datetime_series) {
 
   saveRDS(res, paste0(output_path, '/model_results.rds'))
 
-  ############
-  # PLOTTING #
-  ############
-
-  # Digital Terrain Model & structural grid plots
-  plots_dtm_struct(dtm = voxel_TLS$dtm, grid = voxel_TLS$grid, output_path)
-
-  # Shortwave radiation plots
-  plots_sw(sw_rad = res$sw_rad, output_path)
-
-  # Longwave radiation plots
-  plots_lw(lw_rad = res$lw_rad, output_path)
-
-  # Flux plots
-  plots_flux(res$micro_grid, res$net_radiation, res$sensible_flux, res$latent_flux, res$ground_flux, output_path, current_datetime)
-
-  # Temperature plots
-  plots_temp(res$micro_grid, res$air_temperature, output_path, current_datetime)
+  # ############
+  # # PLOTTING #
+  # ############
+  #
+  # # Digital Terrain Model & structural grid plots
+  # plots_dtm_struct(dtm = voxel_TLS$dtm, grid = voxel_TLS$grid, output_path)
+  #
+  # # Shortwave radiation plots
+  # plots_sw(sw_rad = res$sw_rad, output_path)
+  #
+  # # Longwave radiation plots
+  # plots_lw(lw_rad = res$lw_rad, output_path)
+  #
+  # # Flux plots
+  # plots_flux(res$micro_grid, res$net_radiation, res$sensible_flux, res$latent_flux, res$ground_flux, output_path, current_datetime)
+  #
+  # # Temperature plots
+  # plots_temp(res$micro_grid, res$air_temperature, output_path, current_datetime)
 
 }
 end_script = Sys.time()

@@ -29,6 +29,10 @@ plots_sw <- function(sw_rad, output_path){
   final_ground_surface_results <- sw_rad |>
     filter(Z == 1, na.rm = TRUE)
 
+  # Calculate values at central transect, i.e., Y = 30
+  final_central_transect_results <- sw_rad |>
+    filter(Y == 30, na.rm = TRUE)
+
   # F_d_down plot:
   F_d_down = ggplot(final_avg_results, aes(x = X, y = Z, fill = avg_F_d_down)) +
     geom_tile()+
@@ -200,7 +204,8 @@ plots_sw <- function(sw_rad, output_path){
     scale_fill_viridis_c(
       option = "inferno",
       limits = c(0, 650),
-      oob = scales::squish,
+      trans = "sqrt",
+      breaks = c(0, 50, 100, 200, 400, 600),
       guide = guide_colorbar(
         barwidth = 1,
         barheight = 10,
@@ -235,7 +240,8 @@ plots_sw <- function(sw_rad, output_path){
     scale_fill_viridis_c(
       option = "inferno",
       limits = c(0, 650),
-      oob = scales::squish,
+      trans = "sqrt",
+      breaks = c(0, 50, 100, 200, 400, 600),
       guide = guide_colorbar(
         barwidth = 1,
         barheight = 10,

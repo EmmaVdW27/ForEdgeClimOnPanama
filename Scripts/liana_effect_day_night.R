@@ -23,11 +23,11 @@ input_model_R11 <- readRDS(
 )
 
 input_model_C13_v2 <- readRDS(
-  "Output/timeseries/data/timeseries_C13_30_gens_5_params_calibrated.rds"
+  "Output/timeseries/data/timeseries_C13_calibrated.rds"
 )
 
 input_model_R11_v2 <- readRDS(
-  "Output/timeseries/data/timeseries_R11_30_gens_5_params_calibrated.rds"
+  "Output/timeseries/data/timeseries_R11_calibrated.rds"
 )
 
 output_path <- "Output/liana-effect/"

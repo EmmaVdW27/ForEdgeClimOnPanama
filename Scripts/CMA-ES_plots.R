@@ -18,9 +18,10 @@ start_analysis <- Sys.time()
 # -----------------
 # INPUT
 # -----------------
-season = "R11_60_generations_5_params"
 
-number_of_params = 3
+season = "C13_50_generations_4_params"
+
+number_of_params = 4
 
 # -----------------
 # PLOTS — Convergence visuals
@@ -33,30 +34,36 @@ output_path <- "Output/calibration/plots/"
 lambda <- 4 + floor(3 * log(number_of_params))
 
 
-# PLOT 1: Offspring RMSE between observed and modelled temperature
+# PLOT 1: Offspring objective between observed and modelled temperature or PAR
 # ------
+objective_col <- if ("objective" %in% names(offspring_log)) {
+  "objective"
+} else if ("rmse" %in% names(offspring_log)) {
+  "rmse"
+} else {
+  stop("Neither 'objective' nor 'rmse' found in offspring_log.")
+}
 
-# Best offspring per generation + jitter-x
 best_points <- offspring_log %>%
   group_by(iter) %>%
-  slice_min(rmse, n = 1, with_ties = FALSE) %>%  # pick 1 value
+  slice_min(.data[[objective_col]], n = 1, with_ties = FALSE) %>%
   ungroup() %>%
   mutate(jitter_x = iter + (offspring_id - 1) / lambda)
 
-p_RMSE <- ggplot() +
+p_objective <- ggplot() +
   # All offspring
   geom_point(data = offspring_log,
-             aes(x = iter + (offspring_id - 1) / lambda, y = rmse, colour = "all offsprings")) +
+             aes(x = iter + (offspring_id - 1) / lambda, y = .data[[objective_col]], colour = "all offsprings")) +
   geom_smooth(data = offspring_log,
-              aes(x = iter + (offspring_id - 1) / lambda, y = rmse, colour = "all offsprings"),
+              aes(x = iter + (offspring_id - 1) / lambda, y = .data[[objective_col]], colour = "all offsprings"),
               se = FALSE, method = "loess", formula = y ~ x) +
 
   # Best offspring per generation is highlighted
   geom_point(data = best_points,
-             aes(x = jitter_x, y = rmse, colour = "best offspring per generation"),
+             aes(x = jitter_x, y = .data[[objective_col]], colour = "best offspring per generation"),
              size = 2) +
   geom_line(data = best_points,
-            aes(x = jitter_x, y = rmse, colour = "best offspring per generation"),
+            aes(x = jitter_x, y = .data[[objective_col]], colour = "best offspring per generation"),
             linewidth = 1, linetype = "dashed") +
 
   geom_vline(xintercept = unique(offspring_log$iter),
@@ -67,8 +74,12 @@ p_RMSE <- ggplot() +
   guides(color = guide_legend(title = NULL, override.aes = list(size = 4, linewidth = 2))) +
   # Captions
   labs(x = "Generation",
-       y = "RMSE (°C)",
-       title = "(a) RMSE evolution over generations",
+       y = if (objective_col == "rmse") "RMSE (°C)" else "Objective",
+       title = if (objective_col == "rmse") {
+         "(a) RMSE evolution over generations"
+       } else {
+         "(a) Objective evolution over generations"
+       },
        colour = NULL) +
   theme_bw(base_size = 14) +
   theme(
@@ -79,8 +90,8 @@ p_RMSE <- ggplot() +
     axis.text = element_text(size = 40)
   )
 
-print(p_RMSE)
-ggsave(paste0(output_path, season, ".png"), plot = p_RMSE, width = 16, height = 10, dpi = 500)
+print(p_objective)
+ggsave(paste0(output_path, season, ".png"), plot = p_objective, width = 16, height = 10, dpi = 500)
 
 
 
@@ -88,7 +99,7 @@ ggsave(paste0(output_path, season, ".png"), plot = p_RMSE, width = 16, height = 
 # PLOT 2: 2D plot in PCA space
 # ------
 
-param_cols <- setdiff(names(offspring_log), c("eval_id","iter","offspring_id","rmse","time"))
+param_cols <- setdiff(names(offspring_log), c("eval_id","iter","offspring_id", objective_col,"time"))
 
 # Data matrix (all generations together)
 X <- offspring_log %>% select(all_of(param_cols)) %>% as.matrix()
@@ -137,5 +148,5 @@ cat(sprintf('\nTotal running time = %.2f s\n', as.numeric(end_analysis - start_a
 # Console summaries
 cat("\nOptimised parameters (final):\n")
 print(res$best.param)
-cat("\nMinimal RMSE observed:\n")
+cat("\nMinimal objective observed:\n")
 print(res$best.fitness)

@@ -127,7 +127,7 @@ calculate_LE_PM_C <- function(T_surf_C, T_air_C, SW_down, net_rad, G) {
   slope <- 4098 * es_leaf / (T_surf_C + 237.3)^2
 
   # --- 5. PAR from shortwave ---
-  PAR <- 0.45 * SW_down
+  PAR <- 0.45 * 4.57 * SW_down # spectral band (E) and unit conversion
 
   # --- 6. stomatal responses Jarvis style ---
   f_light <- PAR / (PAR + 100) # stomata close at low PAR

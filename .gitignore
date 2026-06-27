@@ -1,21 +1,22 @@
 .Rproj.user
 .Rhistory
 fast_load.R
-Blender_input.R
 Changes_with_ForEdgeClimv1.0.txt
 profile.out
 Scripts/test_chunks.R
-Scripts/Sobol_indices_wet_night.R
-Scripts/test_compairing_RH_sources.R
+Scripts/older_scripts/
 parameter_distributions_from_literature.xlsx
 Data/*
 !Data/TLS_scaled_DTM_and_grid_C13_Panama.rds
 !Data/TLS_scaled_DTM_and_grid_R11_Panama.rds
+!Data/TLS_scaled_DTM_and_grid_C8_Panama.rds
+!Data/TLS_scaled_DTM_and_grid_R7_Panama.rds
 !Data/Table_CNR1_2023.dat
-!Data/TMS_macro_2023_C13_and_R11.rds
+!Data/TMS_macro_2023_C13_R11_R07_C08.rds
 !Data/bci_ava_ws_elect.csv
 !Data/bci_cl_rh_elect.csv
 !Data/sensor_locations_all_plots.xlsx
+!PAR_data_full-2023.rds
 Output/*
 !Output/2023-04-26_14/
 

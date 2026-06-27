@@ -36,6 +36,11 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
     filter(den != 0) |>
     filter(z == 1)
 
+  # Calculate central transect temperature for forest surface
+  surface_temperature_central_transect <- temp_surf_grid |>
+    filter(den != 0) |>
+    filter(y == 30)
+
   # Colors to be used in the plots
   colors = c("blue", "lightblue", "orange", "red")
 
@@ -122,6 +127,9 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
   ground_air_temperature <- temp_air_grid |>
     filter(z ==1)
 
+  # Calculate the air temperature at central transect
+  central_transect_air_temperature <- temp_air_grid |>
+    filter(y ==30)
 
   # 2D tile plot:
   temp_air_plot = ggplot(average_air_temperature, aes(x = x, y = z, fill = mean_temperature)) +
@@ -215,7 +223,8 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
     scale_fill_gradientn(
       colors = colors,
       values = rescale(c(0.25, 0.5, 0.75, 1)),
-      limits = c(25.5, 33),
+      limits = c(26, 33),
+      breaks = seq(26, 33, by = 2),
       oob = scales::squish,
       guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
     labs(title = NULL,
@@ -247,7 +256,8 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
     scale_fill_gradientn(
       colors = colors,
       values = rescale(c(0.25, 0.5, 0.75, 1)),
-      limits = c(25.5, 33),
+      limits = c(26, 33),
+      breaks = seq(26, 33, by = 2),
       oob = scales::squish,
       guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
     labs(title = NULL,
@@ -279,7 +289,8 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
     scale_fill_gradientn(
       colors = colors,
       values = rescale(c(0.25, 0.5, 0.75, 1)),
-      limits = c(25.5, 38),
+      limits = c(27, 48),
+      breaks = c(27, 32, 37, 42, 47),
       oob = scales::squish,
       guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
     labs(title = NULL,
@@ -311,7 +322,8 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
     scale_fill_gradientn(
       colors = colors,
       values = rescale(c(0.25, 0.5, 0.75, 1)),
-      limits = c(25.5, 38),
+      limits = c(27, 48),
+      breaks = c(27, 32, 37, 42, 47),
       oob = scales::squish,
       guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
     labs(title = NULL,

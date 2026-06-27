@@ -84,6 +84,16 @@ get_treatment_settings <- function(treatment){
         "Data/TLS_scaled_DTM_and_grid_C13_Panama.rds"
       ),
 
+      plots = c(
+        "C8",
+        "C13"
+      ),
+
+      heights = c(
+        38,
+        33
+      ),
+
       scaling = c(
         5.81/6.22,
         1
@@ -99,6 +109,16 @@ get_treatment_settings <- function(treatment){
       structures = c(
         "Data/TLS_scaled_DTM_and_grid_R7_Panama.rds",
         "Data/TLS_scaled_DTM_and_grid_R11_Panama.rds"
+      ),
+
+      plots = c(
+        "R7",
+        "R11"
+      ),
+
+      heights = c(
+        37,
+        35
       ),
 
       scaling = c(
@@ -183,9 +203,9 @@ compute_metrics <- function(res){
 ###############################################################################
 
 model_function <- function(
-  param_values,
-  datetime,
-  treatment_settings
+    param_values,
+    datetime,
+    treatment_settings
 ){
 
   create_input_drivers()
@@ -200,13 +220,25 @@ model_function <- function(
     )
   }
 
-  import_temp_observations(datetime)
-  import_rad_observations(datetime)
-  import_RH_u_observations(datetime)
-
   metrics_all <- list()
 
   for(p in seq_along(treatment_settings$structures)){
+
+    assign(
+      "plotnr",
+      treatment_settings$plots[p],
+      envir = .GlobalEnv
+    )
+
+    assign(
+      "height_canopy",
+      treatment_settings$heights[p],
+      envir = .GlobalEnv
+    )
+
+    import_temp_observations(datetime)
+    import_rad_observations(datetime)
+    import_RH_u_observations(datetime)
 
     voxel_TLS <- readRDS(
       treatment_settings$structures[p]
@@ -357,6 +389,34 @@ for(s in seq_len(nrow(scenarios))){
   metric_names <- names(
     sobol_outputs_all[[1]]
   )
+
+  temperature_metrics <- c(
+    "mean_understorey_T",
+    "sd_understorey_T",
+    "vertical_T_gradient"
+  )
+
+  sw_metrics <- c(
+    "mean_understorey_SW",
+    "sd_understorey_SW",
+    "vertical_SW_extinction"
+  )
+
+  if(period == "night"){
+
+    metric_names <- intersect(
+      metric_names,
+      temperature_metrics
+    )
+
+  }else{
+
+    metric_names <- c(
+      temperature_metrics,
+      sw_metrics
+    )
+
+  }
 
   for(metric in metric_names){
 
