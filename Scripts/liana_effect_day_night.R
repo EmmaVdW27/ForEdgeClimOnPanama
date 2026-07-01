@@ -14,6 +14,9 @@ library(grid)
 # INPUT #
 #########
 
+multiple_treatment_plots = "yes" # yes or no
+temperature_from_model = "Tair_mean_1m" # Tair_mean_1m or temperature_model (27 voxels)
+
 input_model_C13 <- readRDS(
   "Output/timeseries/data/v1.0/timeseries_C13_v1.0_calibrated.rds"
 )
@@ -28,6 +31,14 @@ input_model_C13_v2 <- readRDS(
 
 input_model_R11_v2 <- readRDS(
   "Output/timeseries/data/timeseries_R11_calibrated.rds"
+)
+
+input_model_C8_v2 <- readRDS(
+  "Output/timeseries/data/timeseries_C8_calibrated.rds"
+)
+
+input_model_R7_v2 <- readRDS(
+  "Output/timeseries/data/timeseries_R7_calibrated.rds"
 )
 
 output_path <- "Output/liana-effect/"
@@ -53,6 +64,8 @@ input_model_C13    <- clean_datetime(input_model_C13)
 input_model_R11    <- clean_datetime(input_model_R11)
 input_model_C13_v2 <- clean_datetime(input_model_C13_v2)
 input_model_R11_v2 <- clean_datetime(input_model_R11_v2)
+input_model_C8_v2 <- clean_datetime(input_model_C8_v2)
+input_model_R7_v2 <- clean_datetime(input_model_R7_v2)
 
 ###############################################################################
 # DAY/NIGHT CLASSIFICATION (Panama, UTC)
@@ -76,6 +89,8 @@ input_model_C13    <- add_period(input_model_C13)
 input_model_R11    <- add_period(input_model_R11)
 input_model_C13_v2 <- add_period(input_model_C13_v2)
 input_model_R11_v2 <- add_period(input_model_R11_v2)
+input_model_C8_v2 <- add_period(input_model_C8_v2)
+input_model_R7_v2 <- add_period(input_model_R7_v2)
 
 ###############################################################################
 # AGGREGATION (TEMPERATURE)
@@ -103,7 +118,7 @@ C13_plot_v2 <- input_model_C13_v2 %>%
   mutate(date = as.Date(datetime)) %>%
   group_by(date, period) %>%
   summarise(
-    mod_C13_v2 = mean(temperature_model, na.rm = TRUE),
+    mod_C13_v2 = mean(.data[[temperature_from_model]], na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -111,7 +126,23 @@ R11_plot_v2 <- input_model_R11_v2 %>%
   mutate(date = as.Date(datetime)) %>%
   group_by(date, period) %>%
   summarise(
-    mod_R11_v2 = mean(temperature_model, na.rm = TRUE),
+    mod_R11_v2 = mean(.data[[temperature_from_model]], na.rm = TRUE),
+    .groups = "drop"
+  )
+
+C8_plot_v2 <- input_model_C8_v2 %>%
+  mutate(date = as.Date(datetime)) %>%
+  group_by(date, period) %>%
+  summarise(
+    mod_C8_v2 = mean(.data[[temperature_from_model]], na.rm = TRUE),
+    .groups = "drop"
+  )
+
+R7_plot_v2 <- input_model_R7_v2 %>%
+  mutate(date = as.Date(datetime)) %>%
+  group_by(date, period) %>%
+  summarise(
+    mod_R7_v2 = mean(.data[[temperature_from_model]], na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -123,12 +154,14 @@ C13_extra_v2 <- input_model_C13_v2 %>%
   mutate(date = as.Date(datetime)) %>%
   group_by(date, period) %>%
   summarise(
-    LE_C13    = mean(LE_mean, na.rm = TRUE),
-    RH_C13    = mean(RH_mean, na.rm = TRUE),
-    VPD_C13   = mean(VPD_mean, na.rm = TRUE),
-    Fd_C13    = mean(Fd_down_mean, na.rm = TRUE),
-    Fb_C13    = mean(Fb_down_mean, na.rm = TRUE),
-    Tsurf_C13 = mean(Tsurf_mean, na.rm = TRUE),
+    LE_C13       = mean(LE_mean, na.rm = TRUE),
+    RH_C13       = mean(RH_mean, na.rm = TRUE),
+    VPD_C13      = mean(VPD_mean, na.rm = TRUE),
+    Fd_C13       = mean(Fd_down_mean, na.rm = TRUE),
+    Fb_C13       = mean(Fb_down_mean, na.rm = TRUE),
+    Tsurf_C13    = mean(Tsurf_mean, na.rm = TRUE),
+    Tair_mod_C13 = mean(.data[[temperature_from_model]], na.rm = TRUE),
+    Tair_obs_C13 = mean(value_mean, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -136,45 +169,210 @@ R11_extra_v2 <- input_model_R11_v2 %>%
   mutate(date = as.Date(datetime)) %>%
   group_by(date, period) %>%
   summarise(
-    LE_R11    = mean(LE_mean, na.rm = TRUE),
-    RH_R11    = mean(RH_mean, na.rm = TRUE),
-    VPD_R11   = mean(VPD_mean, na.rm = TRUE),
-    Fd_R11    = mean(Fd_down_mean, na.rm = TRUE),
-    Fb_R11    = mean(Fb_down_mean, na.rm = TRUE),
-    Tsurf_R11 = mean(Tsurf_mean, na.rm = TRUE),
+    LE_R11       = mean(LE_mean, na.rm = TRUE),
+    RH_R11       = mean(RH_mean, na.rm = TRUE),
+    VPD_R11      = mean(VPD_mean, na.rm = TRUE),
+    Fd_R11       = mean(Fd_down_mean, na.rm = TRUE),
+    Fb_R11       = mean(Fb_down_mean, na.rm = TRUE),
+    Tsurf_R11    = mean(Tsurf_mean, na.rm = TRUE),
+    Tair_mod_R11 = mean(.data[[temperature_from_model]], na.rm = TRUE),
+    Tair_obs_R11 = mean(value_mean, na.rm = TRUE),
     .groups = "drop"
   )
+
+C8_extra_v2 <- input_model_C8_v2 %>%
+  mutate(date = as.Date(datetime)) %>%
+  group_by(date, period) %>%
+  summarise(
+    LE_C8       = mean(LE_mean, na.rm = TRUE),
+    RH_C8       = mean(RH_mean, na.rm = TRUE),
+    VPD_C8      = mean(VPD_mean, na.rm = TRUE),
+    Fd_C8       = mean(Fd_down_mean, na.rm = TRUE),
+    Fb_C8       = mean(Fb_down_mean, na.rm = TRUE),
+    Tsurf_C8    = mean(Tsurf_mean, na.rm = TRUE),
+    Tair_mod_C8 = mean(.data[[temperature_from_model]], na.rm = TRUE),
+    Tair_obs_C8 = mean(value_mean, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+R7_extra_v2 <- input_model_R7_v2 %>%
+  mutate(date = as.Date(datetime)) %>%
+  group_by(date, period) %>%
+  summarise(
+    LE_R7       = mean(LE_mean, na.rm = TRUE),
+    RH_R7       = mean(RH_mean, na.rm = TRUE),
+    VPD_R7      = mean(VPD_mean, na.rm = TRUE),
+    Fd_R7       = mean(Fd_down_mean, na.rm = TRUE),
+    Fb_R7       = mean(Fb_down_mean, na.rm = TRUE),
+    Tsurf_R7    = mean(Tsurf_mean, na.rm = TRUE),
+    Tair_mod_R7 = mean(.data[[temperature_from_model]], na.rm = TRUE),
+    Tair_obs_R7 = mean(value_mean, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+###############################################################################
+# TREATMENT AVERAGES
+###############################################################################
+
+control_plot <-
+  C13_plot %>%
+  transmute(
+    date,
+    period,
+    obs_control = obs_C13,
+    mod_control = mod_C13
+  )
+
+removal_plot <-
+  R11_plot %>%
+  transmute(
+    date,
+    period,
+    obs_removal = obs_R11,
+    mod_removal = mod_R11
+  )
+
+
+if(multiple_treatment_plots == "no"){
+
+  control_plot_v2 <- C13_plot_v2 %>%
+    transmute(
+      date,
+      period,
+      mod_control_v2 = mod_C13_v2
+    )
+
+  removal_plot_v2 <- R11_plot_v2 %>%
+    transmute(
+      date,
+      period,
+      mod_removal_v2 = mod_R11_v2
+    )
+
+  control_extra_v2 <- C13_extra_v2 %>%
+    transmute(
+      date,
+      period,
+      LE_control = LE_C13,
+      RH_control = RH_C13,
+      VPD_control = VPD_C13,
+      Fd_control = Fd_C13,
+      Fb_control = Fb_C13,
+      Tsurf_control = Tsurf_C13,
+      Tair_mod_control = Tair_mod_C13,
+      Tair_obs_control = Tair_obs_C13
+    )
+
+  removal_extra_v2 <- R11_extra_v2 %>%
+    transmute(
+      date,
+      period,
+      LE_removal = LE_R11,
+      RH_removal = RH_R11,
+      VPD_removal = VPD_R11,
+      Fd_removal = Fd_R11,
+      Fb_removal = Fb_R11,
+      Tsurf_removal = Tsurf_R11,
+      Tair_mod_removal = Tair_mod_R11,
+      Tair_obs_removal = Tair_obs_R11
+    )
+
+} else{
+
+  control_plot_v2 <-
+    full_join(C13_plot_v2, C8_plot_v2,
+              by = c("date","period")) %>%
+    transmute(
+      date,
+      period,
+      mod_control_v2 = (mod_C13_v2 + mod_C8_v2) / 2
+    )
+
+  removal_plot_v2 <-
+    full_join(R11_plot_v2, R7_plot_v2,
+              by = c("date","period")) %>%
+    transmute(
+      date,
+      period,
+      mod_removal_v2 = (mod_R11_v2 + mod_R7_v2) / 2
+    )
+
+  control_extra_v2 <-
+    full_join(
+      C13_extra_v2,
+      C8_extra_v2,
+      by = c("date", "period")
+    ) %>%
+    transmute(
+      date,
+      period,
+
+      LE_control    = (LE_C13 + LE_C8) / 2,
+      RH_control    = (RH_C13 + RH_C8) / 2,
+      VPD_control   = (VPD_C13 + VPD_C8) / 2,
+      Fd_control    = (Fd_C13 + Fd_C8) / 2,
+      Fb_control    = (Fb_C13 + Fb_C8) / 2,
+      Tsurf_control = (Tsurf_C13 + Tsurf_C8) / 2,
+
+      Tair_mod_control = (Tair_mod_C13 + Tair_mod_C8) / 2,
+      Tair_obs_control = (Tair_obs_C13 + Tair_obs_C8) / 2
+    )
+
+  removal_extra_v2 <-
+    full_join(
+      R11_extra_v2,
+      R7_extra_v2,
+      by = c("date", "period")
+    ) %>%
+    transmute(
+      date,
+      period,
+
+      LE_removal    = (LE_R11 + LE_R7) / 2,
+      RH_removal    = (RH_R11 + RH_R7) / 2,
+      VPD_removal   = (VPD_R11 + VPD_R7) / 2,
+      Fd_removal    = (Fd_R11 + Fd_R7) / 2,
+      Fb_removal    = (Fb_R11 + Fb_R7) / 2,
+      Tsurf_removal = (Tsurf_R11 + Tsurf_R7) / 2,
+
+      Tair_mod_removal = (Tair_mod_R11 + Tair_mod_R7) / 2,
+      Tair_obs_removal = (Tair_obs_R11 + Tair_obs_R7) / 2
+    )
+}
+
+
 
 ###############################################################################
 # JOIN
 ###############################################################################
 
-comparison <- C13_plot %>%
-  inner_join(R11_plot, by = c("date", "period")) %>%
-  inner_join(C13_plot_v2, by = c("date", "period")) %>%
-  inner_join(R11_plot_v2, by = c("date", "period")) %>%
-  inner_join(C13_extra_v2, by = c("date", "period")) %>%
-  inner_join(R11_extra_v2, by = c("date", "period"))
+comparison <-
+  control_plot %>%
+  inner_join(removal_plot, by = c("date","period")) %>%
+  inner_join(control_plot_v2, by = c("date","period")) %>%
+  inner_join(removal_plot_v2, by = c("date","period")) %>%
+  inner_join(control_extra_v2, by = c("date","period")) %>%
+  inner_join(removal_extra_v2, by = c("date","period"))
 
 ###############################################################################
 # REMOVE PERIOD
 ###############################################################################
 
-exclude_start <- as.Date("2023-06-21")
-exclude_end   <- as.Date("2023-06-27")
-
-comparison <- comparison %>%
-  mutate(
-    across(
-      where(is.numeric),
-      ~ ifelse(
-        date >= exclude_start &
-          date <= exclude_end,
-        NA,
-        .
-      )
-    )
-  )
+# exclude_start <- as.Date("2023-06-21")
+# exclude_end   <- as.Date("2023-06-27")
+#
+# comparison <- comparison %>%
+#   mutate(
+#     across(
+#       where(is.numeric),
+#       ~ ifelse(
+#         date >= exclude_start &
+#           date <= exclude_end,
+#         NA,
+#         .
+#       )
+#     )
+#   )
 
 ###############################################################################
 # DELTAS
@@ -182,17 +380,22 @@ comparison <- comparison %>%
 
 comparison <- comparison %>%
   mutate(
-    delta_obs    = obs_R11 - obs_C13,
-    delta_mod    = mod_R11 - mod_C13,
-    delta_mod_v2 = mod_R11_v2 - mod_C13_v2,
+    delta_obs    = obs_removal - obs_control,
+    delta_mod    = mod_removal - mod_control,
+    delta_mod_v2 = mod_removal_v2 - mod_control_v2,
 
-    delta_LE    = LE_R11 - LE_C13,
-    delta_RH    = RH_R11 - RH_C13,
-    delta_VPD   = VPD_R11 - VPD_C13,
-    delta_Fd    = Fd_R11 - Fd_C13,
-    delta_Fb    = Fb_R11 - Fb_C13,
-    delta_Tsurf = Tsurf_R11 - Tsurf_C13
+    delta_LE        = LE_removal - LE_control,
+    delta_RH        = RH_removal - RH_control,
+    delta_VPD       = VPD_removal - VPD_control,
+    delta_Fd        = Fd_removal - Fd_control,
+    delta_Fb        = Fb_removal - Fb_control,
+    delta_Tsurf     = Tsurf_removal - Tsurf_control,
+
+    delta_Tair_mod  = Tair_mod_removal - Tair_mod_control,
+    delta_Tair_obs  = Tair_obs_removal - Tair_obs_control
   )
+
+
 
 ###############################################################################
 # SEASON CLASSIFICATION
@@ -257,6 +460,54 @@ season_ranges <- bind_rows(
     xmin <= max(comparison$date) &
       xmax >= min(comparison$date)
   )
+
+###############################################################################
+# ABSOLUTE AIR TEMPERATURE
+###############################################################################
+
+absolute_air <- bind_rows(
+
+  comparison %>%
+    transmute(
+      date,
+      season,
+      period,
+      treatment = "Control",
+      type = "Observed",
+      value = obs_control
+    ),
+
+  comparison %>%
+    transmute(
+      date,
+      season,
+      period,
+      treatment = "Control",
+      type = "Modelled",
+      value = mod_control_v2
+    ),
+
+  comparison %>%
+    transmute(
+      date,
+      season,
+      period,
+      treatment = "Removal",
+      type = "Observed",
+      value = obs_removal
+    ),
+
+  comparison %>%
+    transmute(
+      date,
+      season,
+      period,
+      treatment = "Removal",
+      type = "Modelled",
+      value = mod_removal_v2
+    )
+
+)
 
 ###############################################################################
 # TIMESERIES FUNCTION
@@ -419,7 +670,7 @@ plot_timeseries <- function(df, period_filter, title_text) {
     labs(
       title = title_text,
       x = "Date",
-      y = "Air temperature difference (R11 - C13, °C)",
+      y = "Air temperature difference (°C)",
       colour = NULL
     ) +
 
@@ -473,20 +724,56 @@ comparison_long <- comparison %>%
     cols = -c(date, season, period),
     names_to = "variable",
     values_to = "value"
+  ) %>%
+  mutate(type = "Modelled")
+
+air_long <-
+  comparison %>%
+  transmute(
+    date,
+    season,
+    period,
+    variable = "c) Δ Air T (°C)",
+    Observed = delta_Tair_obs,
+    Modelled = delta_Tair_mod
+  ) %>%
+  pivot_longer(
+    c(Observed, Modelled),
+    names_to = "type",
+    values_to = "value"
   )
 
-comparison_long <- comparison_long %>%
+comparison_long <- bind_rows(
+  comparison_long,
+  air_long
+)
+
+comparison_long_day <- comparison_long %>%
   mutate(
     variable = recode(
       variable,
-      delta_LE    = "c) Δ LE (W m⁻²)",
-      delta_RH    = "e) Δ RH (%)",
-      delta_VPD   = "f) Δ VPD (kPa)",
-      delta_Fd    = "a) Δ Diffuse SW (W m⁻²)",
-      delta_Fb    = "b) Δ Direct SW (W m⁻²)",
-      delta_Tsurf = "d) Δ Surface T (°C)"
+      delta_Fd        = "a) Δ Diffuse SW (W m⁻²)",
+      delta_Fb        = "b) Δ Direct SW (W m⁻²)",
+      delta_Tsurf     = "c) Δ Surface T (°C)",
+      "c) Δ Air T (°C)" = "d) Δ Air T (°C)",
+      delta_LE        = "e) Δ LE (W m⁻²)",
+      delta_RH        = "f) Δ RH (%)",
+      delta_VPD       = "g) Δ VPD (kPa)"
     )
   )
+
+comparison_long_night <- comparison_long %>%
+  mutate(
+    variable = recode(
+      variable,
+      delta_Tsurf     = "a) Δ Surface T (°C)",
+      "c) Δ Air T (°C)" = "b) Δ Air T (°C)",
+      delta_LE        = "c) Δ LE (W m⁻²)",
+      delta_RH        = "d) Δ RH (%)",
+      delta_VPD       = "e) Δ VPD (kPa)"
+    )
+  )
+
 
 ###############################################################################
 # FACET FUNCTION
@@ -501,7 +788,7 @@ plot_facet <- function(df, vars, period_filter, title = NULL) {
     )
 
   means <- df_sub %>%
-    group_by(variable, season) %>%
+    group_by(variable, season, type) %>%
     summarise(
       mean_val = mean(value, na.rm = TRUE),
       .groups = "drop"
@@ -537,9 +824,9 @@ plot_facet <- function(df, vars, period_filter, title = NULL) {
     ) +
 
     geom_smooth(
+      aes(colour = type),
       method = "gam",
       formula = y ~ s(x, k = 20),
-      colour = "red",
       size = 1,
       alpha = 0.8,
       na.rm = TRUE
@@ -551,9 +838,9 @@ plot_facet <- function(df, vars, period_filter, title = NULL) {
         x = xmin,
         xend = xmax,
         y = mean_val,
-        yend = mean_val
+        yend = mean_val,
+        colour = type
       ),
-      colour = "red",
       linewidth = 0.8
     ) +
 
@@ -563,17 +850,13 @@ plot_facet <- function(df, vars, period_filter, title = NULL) {
         x = x_pos,
         y = mean_val,
         label = paste0(
-          ifelse(
-            season == "Wet season",
-            "Wet",
-            "Dry"
-          ),
+          ifelse(season == "Wet season", "Wet", "Dry"),
           " = ",
           round(mean_val, 2)
-        )
+        ),
+        colour = type
       ),
       fill = "white",
-      colour = "red",
       label.size = 0.3,
       label.r = unit(0.15, "lines"),
       label.padding = unit(0.15, "lines"),
@@ -611,6 +894,12 @@ plot_facet <- function(df, vars, period_filter, title = NULL) {
       axis.text = element_text(size = 13),
       plot.title = element_text(size = 18, face = "bold"),
       legend.position = "none"
+    ) +
+    scale_colour_manual(
+      values = c(
+        Observed = "blue",
+        Modelled = "red"
+      )
     )
 
   return(p)
@@ -622,7 +911,7 @@ plot_facet <- function(df, vars, period_filter, title = NULL) {
 ###############################################################################
 
 p_radiation_day <- plot_facet(
-  comparison_long,
+  comparison_long_day,
   vars = c(
     "a) Δ Diffuse SW (W m⁻²)",
     "b) Δ Direct SW (W m⁻²)"
@@ -631,81 +920,207 @@ p_radiation_day <- plot_facet(
   title = "Daytime (06-18 EST)"
 )
 
-p_humidity_day <- plot_facet(
-  comparison_long,
+p_middle_day <- plot_facet(
+  comparison_long_day,
   vars = c(
-    "e) Δ RH (%)",
-    "f) Δ VPD (kPa)"
+    "c) Δ Surface T (°C)",
+    "d) Δ Air T (°C)"
   ),
-  period_filter = "Day",
-  title = NULL
+  period_filter = "Day"
 )
 
-p_LE_day <- plot_facet(
-  comparison_long,
+p_right_day <- plot_facet(
+  comparison_long_day,
   vars = c(
-    "c) Δ LE (W m⁻²)",
-    "d) Δ Surface T (°C)"
+    "e) Δ LE (W m⁻²)",
+    "f) Δ RH (%)",
+    "g) Δ VPD (kPa)"
   ),
-  period_filter = "Day",
-  title = NULL
+  period_filter = "Day"
 )
 
 combined_day <-
   p_radiation_day +
-  p_LE_day +
-  p_humidity_day +
+  p_middle_day +
+  p_right_day +
   plot_layout(ncol = 3)
 
 ###############################################################################
 # NIGHT FACETS
 ###############################################################################
 
-p_radiation_night <- plot_facet(
-  comparison_long,
+p_middle_night <- plot_facet(
+  comparison_long_night,
   vars = c(
-    "a) Δ Diffuse SW (W m⁻²)",
-    "b) Δ Direct SW (W m⁻²)"
+    "a) Δ Surface T (°C)",
+    "b) Δ Air T (°C)"
   ),
   period_filter = "Night",
   title = "Nighttime (18-06 EST)"
 )
 
-p_humidity_night <- plot_facet(
-  comparison_long,
-  vars = c(
-    "e) Δ RH (%)",
-    "f) Δ VPD (kPa)"
-  ),
-  period_filter = "Night",
-  title = NULL
-)
-
-p_LE_night <- plot_facet(
-  comparison_long,
+p_right_night <- plot_facet(
+  comparison_long_night,
   vars = c(
     "c) Δ LE (W m⁻²)",
-    "d) Δ Surface T (°C)"
+    "d) Δ RH (%)",
+    "e) Δ VPD (kPa)"
   ),
-  period_filter = "Night",
-  title = NULL
+  period_filter = "Night"
 )
 
 combined_night <-
-  p_radiation_night +
-  p_LE_night +
-  p_humidity_night +
-  plot_layout(ncol = 3)
+  p_middle_night +
+  p_right_night +
+  plot_layout(ncol = 2)
+
+
 
 ###############################################################################
-# PRINT FIGURES
+# absolute air plot
 ###############################################################################
 
-print(timeseries_day)
-print(timeseries_night)
+plot_absolute_air <- function(df, period_filter, title = NULL){
 
-print(combined_day)
-print(combined_night)
+  df_sub <- df %>%
+    filter(period == period_filter)
+
+  means <- df_sub %>%
+    group_by(treatment, season, type) %>%
+    summarise(
+      mean_val = mean(value, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      xmin = if_else(
+        season == "Wet season",
+        as.Date("2023-05-01"),
+        as.Date("2023-01-01")
+      ),
+      xmax = if_else(
+        season == "Wet season",
+        as.Date("2023-12-15"),
+        as.Date("2023-04-30")
+      ),
+      x_pos = if_else(
+        season == "Wet season",
+        as.Date("2023-08-15"),
+        as.Date("2023-02-15")
+      )
+    )
+
+  ggplot(df_sub,
+         aes(date,
+             value,
+             colour = type)) +
+
+    geom_rect(
+      data = wet_season,
+      aes(
+        xmin = xmin,
+        xmax = xmax,
+        ymin = ymin,
+        ymax = ymax
+      ),
+      inherit.aes = FALSE,
+      fill = "lightblue",
+      alpha = 0.6
+    ) +
+
+    geom_smooth(
+      method = "gam",
+      formula = y ~ s(x, k = 30),
+      linewidth = 1
+    ) +
+
+    geom_segment(
+      data = means,
+      aes(
+        x = xmin,
+        xend = xmax,
+        y = mean_val,
+        yend = mean_val,
+        colour = type
+      ),
+      linewidth = 0.8
+    ) +
+
+    geom_label(
+      data = means,
+      aes(
+        x = x_pos,
+        y = mean_val,
+        label = round(mean_val,1),
+        colour = type
+      ),
+      fill = "white",
+      size = 4
+    ) +
+
+    facet_wrap(
+      ~treatment,
+      ncol = 2,
+      scales = "fixed"
+    ) +
+
+    scale_colour_manual(
+      values = c(
+        Observed = "blue",
+        Modelled = "red"
+      )
+    ) +
+
+    labs(
+      title = title,
+      x = "Date",
+      y = "Air temperature (°C)",
+      colour = NULL
+    ) +
+
+    theme_bw() +
+
+    theme(
+      strip.text = element_text(size = 18, face = "bold"),
+      axis.title = element_text(size = 16),
+      axis.text = element_text(size = 13),
+      plot.title = element_text(
+        size = 18,
+        face = "bold"
+      ),
+      legend.position = "none",
+      panel.spacing.x = unit(2, "lines")
+    ) +
+    scale_x_date(
+      limits = c(
+        min(df_sub$date),
+        max(df_sub$date) + days(10)
+      )
+    )
+}
+
+###############################################################################
+# CREATE FIGURES
+###############################################################################
+
+absolute_day <- plot_absolute_air(
+  absolute_air,
+  period_filter = "Day",
+  title = "Daytime (06–18 EST)"
+)
+
+absolute_night <- plot_absolute_air(
+  absolute_air,
+  period_filter = "Night",
+  title = "Nighttime (18–06 EST)"
+
+)
+
+absolute_combined <-
+  wrap_plots(
+    absolute_day,
+    absolute_night,
+    ncol = 1
+  )
 
 ###############################################################################
 # SAVE FIGURES
@@ -750,8 +1165,20 @@ ggsave(
     "combined_process_facets_night.png"
   ),
   combined_night,
-  width = 14,
+  width = 9.33,
   height = 8,
+  dpi = 300
+)
+
+
+ggsave(
+  paste0(
+    output_path,
+    "absolute_air_temperature_combined.png"
+  ),
+  plot = absolute_combined,
+  width = 12,
+  height = 10,
   dpi = 300
 )
 

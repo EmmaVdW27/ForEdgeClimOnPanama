@@ -6,7 +6,7 @@
 create_input_drivers <- function() {
 
   # input files
-  temp_input_file_rds <<- readRDS("Data/TMS_macro_2023_C13_R11_R07_C08.rds")
+  temp_input_file_rds <<- readRDS("Data/TMS_macro_2023_4C_4R.rds")
   rad_input_file_csv <<- "Data/Table_CNR1_2023.dat"
   PAR_input_file_rds <<- readRDS("Data/PAR_data_full_2023.rds")
   sensor_locations <<- read_excel("Data/sensor_locations_all_plots.xlsx")
