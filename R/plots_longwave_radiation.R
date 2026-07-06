@@ -13,12 +13,6 @@ plots_lw <- function(lw_rad, output_path){
   # 2D RTM plots
   ##############
 
-  # # background image
-  # img  <- png::readPNG("Output/horizontal_transect_2.png")
-  # img[,,4] <- img[,,4] *0.3 # make transparent
-  # bg_grob <- grid::rasterGrob(img, width = unit(1, "npc"), height = unit(1, "npc"))
-
-
   # Calculate averages across Y-slices
   final_avg_results <- lw_rad |>
     group_by(X, Z) |>
@@ -29,22 +23,7 @@ plots_lw <- function(lw_rad, output_path){
   # F_d_down plot:
   F_d_down = ggplot(final_avg_results, aes(x = X, y = Z, fill = avg_F_d_down)) +
     geom_tile() +
-    # scale_x_continuous(
-    #   breaks = seq(0, 150, by = 50),
-    #   labels = rev(seq(0, 150, by = 50))
-    # ) +
-    # annotation_custom(
-    #   grob = bg_grob,
-    #   xmin = 0, xmax = 140,
-    #   ymin = 0, ymax = 40
-    # ) +
-    # annotate("segment", x = 5, xend = 145, y = 44, yend = 44,
-    #          arrow = arrow(ends = "both", type = "closed", length = unit(0.3, "cm")),
-    #          linewidth = 1.2) +
-    # annotate("text", x = 29,  y = 40,
-    #          label = "towards forest core", size = 5) +
-    # annotate("text", x = 120, y = 40,
-    #          label = "towards forest edge", size = 5) +
+
     scale_fill_viridis_c(option = "inferno",#,  limits = c(300, 850), breaks = c(400, 600, 800),
                          guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
     labs(title = paste("Longwave downward radiation"),
@@ -73,11 +52,6 @@ plots_lw <- function(lw_rad, output_path){
       breaks = seq(0, 150, by = 50),
       labels = rev(seq(0, 150, by = 50))
     ) +
-    # annotation_custom(
-    #   grob = bg_grob,
-    #   xmin = 0, xmax = 140,
-    #   ymin = 0, ymax = 40
-    # ) +
     scale_fill_viridis_c(option = "inferno",# limits = c(300, 850), breaks = c(400, 600, 800),
                          guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
     labs(title = paste("Longwave upward radiation"),

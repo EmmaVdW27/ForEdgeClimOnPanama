@@ -171,7 +171,7 @@ hour_residual <- ggplot(val_data_all_h, aes(x = hour_f, y = resid)) +
   ) +
   facet_wrap(~ model, ncol = 2) +
   geom_label(
-    data = lab_resid_df,
+    data = lab_df,
     aes(x = -Inf, y = Inf, label = lab_resid),
     inherit.aes = FALSE,
     hjust = -0.1, vjust = 4.3,

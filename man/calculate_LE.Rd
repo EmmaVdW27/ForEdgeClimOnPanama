@@ -8,12 +8,14 @@
 calculate_LE(temperature, net_rad, G)
 }
 \arguments{
-\item{temperature}{Forest surface temperature}
+\item{temperature}{Forest surface temperature (K)}
 
-\item{net_rad}{Net radiation}
+\item{net_rad}{Net radiation (W/m2)}
+
+\item{G}{Ground heat flux (W/m2)}
 }
 \value{
-LE Latent heat flux
+LE Latent heat flux (W/m2)
 }
 \description{
 Function to calculate latent heat flux LE via Priestley-Taylor approximation

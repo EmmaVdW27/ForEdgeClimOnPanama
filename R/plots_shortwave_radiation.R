@@ -13,11 +13,6 @@ plots_sw <- function(sw_rad, output_path){
   # 2D RTM plots
   ##############
 
-  # # background image
-  # img  <- png::readPNG("Output/horizontal_transect_2.png")
-  # img[,,4] <- img[,,4] *0.3 # make transparent
-  # bg_grob <- grid::rasterGrob(img, width = unit(1, "npc"), height = unit(1, "npc"))
-
   # Calculate averages across Y-slices
   final_avg_results <- sw_rad |>
     group_by(X, Z) |>
@@ -36,15 +31,6 @@ plots_sw <- function(sw_rad, output_path){
   # F_d_down plot:
   F_d_down = ggplot(final_avg_results, aes(x = X, y = Z, fill = avg_F_d_down)) +
     geom_tile()+
-    # scale_x_continuous(
-    #   breaks = seq(0, 150, by = 50),
-    #   labels = rev(seq(0, 150, by = 50))
-    # ) +
-    # annotation_custom(
-    #   grob = bg_grob,
-    #   xmin = 0, xmax = 140,
-    #   ymin = 0, ymax = 40
-    # ) +
     scale_fill_viridis_c(option = "inferno", #limits = c(0, 700), breaks = c(0, 50, 100, 250, 600),
                         # trans = scales::pseudo_log_trans(sigma = 5), oob = scales::squish,
                          guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
@@ -68,22 +54,6 @@ plots_sw <- function(sw_rad, output_path){
   # F_d_up plot:
   F_d_up = ggplot(final_avg_results, aes(x = X, y = Z, fill = avg_F_d_up)) +
     geom_tile()+
-    # scale_x_continuous(
-    #   breaks = seq(0, 150, by = 50),
-    #   labels = rev(seq(0, 150, by = 50))
-    # ) +
-    # annotation_custom(
-    #   grob = bg_grob,
-    #   xmin = 0, xmax = 140,
-    #   ymin = 0, ymax = 40
-    # ) +
-    # annotate("segment", x = 5, xend = 145, y = 44, yend = 44,
-    #          arrow = arrow(ends = "both", type = "closed", length = unit(0.3, "cm")),
-    #          linewidth = 1.2) +
-    # annotate("text", x = 29,  y = 40,
-    #          label = "towards forest core", size = 5) +
-    # annotate("text", x = 120, y = 40,
-    #          label = "towards forest edge", size = 5) +
     scale_fill_viridis_c(option = "inferno", #limits = c(0, 700), breaks = c(0, 50, 100, 250, 600),
                         # trans = scales::pseudo_log_trans(sigma = 5), oob = scales::squish,
                          guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
@@ -106,15 +76,6 @@ plots_sw <- function(sw_rad, output_path){
   # F_b_down plot:
   F_b_down = ggplot(final_avg_results, aes(x = X, y = Z, fill = avg_F_b_down)) +
     geom_tile()+
-    # scale_x_continuous(
-    #   breaks = seq(0, 150, by = 50),
-    #   labels = rev(seq(0, 150, by = 50))
-    # ) +
-    # annotation_custom(
-    #   grob = bg_grob,
-    #   xmin = 0, xmax = 140,
-    #   ymin = 0, ymax = 40
-    # ) +
     scale_fill_viridis_c(option = "inferno", #limits = c(0, 700), breaks = c(0, 50, 100, 250, 600),
                          #trans = scales::pseudo_log_trans(sigma = 5), oob = scales::squish,
                          guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
@@ -138,11 +99,6 @@ plots_sw <- function(sw_rad, output_path){
   # F_d_down + F_b_down plot:
   F_b_d_down = ggplot(final_avg_results, aes(x = X, y = Z, fill = avg_F_d_down + avg_F_b_down)) +
     geom_tile() +
-    # annotation_custom(
-    #   grob = bg_grob,
-    #   xmin = 0, xmax = 140,
-    #   ymin = 0, ymax = 40
-    # ) +
     scale_fill_viridis_c(option = "inferno",
                          guide = guide_colorbar(barwidth = 1, barheight = 10, frame.colour = "black", ticks.colour = "black")) +
     labs(title = paste("Shortwave direct-beam & diffuse downward radiation"),
@@ -196,11 +152,6 @@ plots_sw <- function(sw_rad, output_path){
   # F_down plot for 3D plot
   F_down = ggplot(final_avg_results, aes(x = X, y = Z, fill = avg_F_d_down + avg_F_b_down)) +
     geom_tile()+
-    # annotation_custom(
-    #   grob = bg_grob,
-    #   xmin = 0, xmax = 140,
-    #   ymin = 0, ymax = 40
-    # ) +
     scale_fill_viridis_c(
       option = "inferno",
       limits = c(0, 650),

@@ -1,5 +1,5 @@
 ############################################################################################
-# Combined script: ForEdgeClim timeseries + validation + txtProgressBar
+# Combined script: ForEdgeClim timeseries + validation + txtProgressBar for shortwave radiation modelling
 #
 # Author: Emma Van de Walle - Q-ForestLab
 ############################################################################################
@@ -22,10 +22,10 @@ suppressPackageStartupMessages({
 handlers(global = TRUE)
 handlers("txtprogressbar")
 options(progressr.enable = TRUE)
-cores <- as.numeric(Sys.getenv("PBS_NUM_PPN", unset = 1))
-plan(multisession, workers = cores)
 
-print(paste("Using", availableCores(), "cores."))
+cores <- 16
+plan(multicore, workers = cores)
+print(paste("Using", cores, "cores."))
 
 start_analysis <- Sys.time()
 
@@ -33,16 +33,19 @@ start_analysis <- Sys.time()
 # INPUT
 # -----------------
 
-plotnr = "C8"
-season_string = "C8_50_gens_3_params_uncalibrated"
+plotnr = "C8" # C8 or R7
+season_string = "C8_calibrated"
 
 params = list(
+  # uncalibrated values:
+  # omega = 0.52, Kb_v = 1.25,
+
   # calibrated values:
-  beta0 = 0.325, Kd_v = 0.775, Kb_v = 1.25,
+  omega = 0.5266289, Kb_v = 0.5058042,
 
   # fixed values:
-  betad = 0.325, omega = 0.52,
-  omega_g_v = 0.13,
+  beta0 = 0.325, betad = 0.325, omega = 0.52,
+  omega_g_v = 0.13, Kd_v = 0.775,
 
   e_forest = 0.965, beta_lw = 0.325, omega_lw = 0.035,
   Kd_lw_v = 0.3, omega_g_lw_v = 0.055,
@@ -71,6 +74,13 @@ all_datetimes <- seq(
   to   = as.POSIXct("2023-12-31 23:00:00", tz = "UTC"),
   by   = "hour"
 )
+
+## only daytime hours
+#all_datetimes <- all_datetimes[
+#  as.integer(format(all_datetimes, "%H")) >= 11 &
+#  as.integer(format(all_datetimes, "%H")) <= 22
+#]
+
 
 # plot specifics
 if(plotnr == "C13"){
@@ -119,6 +129,13 @@ process_datetime <- function(dt, i) {
 
     res <- run_foredgeclim(grid_local, datetime)
 
+    # air temp
+    micro_grid <- res$micro_grid
+    air_temp   <- res$air_temperature
+
+    if (any(!is.finite(air_temp)))
+      stop("NaN/Inf in air_temp")
+
     # ---- Extract z = 1 ----
     micro_grid <- res$micro_grid
     sel <- micro_grid$z == 1
@@ -132,6 +149,8 @@ process_datetime <- function(dt, i) {
 
     # ---- Observations ----
     key <- format(datetime, "%Y%m%d_%H")
+
+    # PAR observations
     file_par <- paste0(
       "Data/PAR_obs_",
       key,
@@ -140,19 +159,27 @@ process_datetime <- function(dt, i) {
       ".csv"
     )
 
-    if(!file.exists(file_par))
+    if (!file.exists(file_par))
       return(NULL)
 
     PAR_obs <- read.csv(file_par)
 
-    # ---- Model grid ----
-    par_grid <- res$sw_rad
+    # TOMST observations
+    TOMST <- read.csv(
+      paste0(
+        "Data/microtemp_air_obs_",
+        key,
+        "_",
+        plotnr,
+        ".csv"
+      )
+    )
 
-    par_grid <- par_grid %>%
+    # ---- Model grids ----
+    par_grid <- res$sw_rad %>%
       filter(Z == 1) %>%
       mutate(
-        PAR_model =
-          (F_d_down + F_b_down) * 2.02
+        PAR_model = (F_d_down + F_b_down) * 2.02
       ) %>%
       select(
         X,
@@ -160,47 +187,127 @@ process_datetime <- function(dt, i) {
         PAR_model
       )
 
-    # ---- Nearest neighbour ----
-    nn <- nn2(
-      data = as.matrix(par_grid[, c("X","Y")]),
-      query = as.matrix(PAR_obs[, c("x","y")]),
+    temp_air_grid <- micro_grid %>%
+      mutate(
+        temperature = air_temp - 273.15
+      ) %>%
+      filter(z == 1) %>%
+      select(x, y, temperature)
+
+    # ---- Mean model temperature at 1 m height ----
+    Tair_mean_1m <- mean(temp_air_grid$temperature, na.rm = TRUE)
+
+    # ---- Air temperature nearest neighbour ----
+    nn_temp <- nn2(
+      data = as.matrix(temp_air_grid[, c("x","y")]),
+      query = as.matrix(TOMST[, c("x","y")]),
       k = 1
     )
 
-    idx <- nn$nn.idx[,1]
+    idx_temp <- nn_temp$nn.idx[,1]
 
-    # ---- Combine ----
-    PAR_obs <- PAR_obs %>%
+    TOMST <- TOMST %>%
       mutate(
-        datetime = datetime,
-        PAR_model = par_grid$PAR_model[idx],
-        resid = PAR_model - radiation_mean,
-        LE_mean = LE_mean,
-        RH_mean = RH_mean,
-        VPD_mean = VPD_mean,
-        Fd_down_mean = Fd_mean,
-        Fb_down_mean = Fb_mean,
-        Tsurf_mean = surf_temp_mean
+        temperature_model = temp_air_grid$temperature[idx_temp],
+        Tair_mean_1m = Tair_mean_1m,
       )
 
-    # ---- Validation data ----
-    valid <-
-      is.finite(PAR_obs$radiation_mean) &
-      is.finite(PAR_obs$PAR_model)
-    n_valid <- sum(valid)
-    if(n_valid == 0)
-      return(NULL)
+    validation <- NULL
+
+    # ============================================================
+    # CASE 1: PAR observations available
+    # ============================================================
+
+    if (nrow(PAR_obs) > 0) {
+
+      nn <- nn2(
+        data = as.matrix(par_grid[, c("X","Y")]),
+        query = as.matrix(PAR_obs[, c("x","y")]),
+        k = 1
+      )
+
+      idx <- nn$nn.idx[,1]
+
+      PAR_obs <- PAR_obs %>%
+        left_join(
+          TOMST %>%
+            select(
+              x,
+              y,
+              value_mean,
+              temperature_model,
+              Tair_mean_1m
+            ),
+          by = c("x","y")
+        ) %>%
+        mutate(
+          datetime = datetime,
+
+          PAR_model = par_grid$PAR_model[idx],
+          resid = PAR_model - radiation_mean,
+
+          LE_mean = LE_mean,
+          RH_mean = RH_mean,
+          VPD_mean = VPD_mean,
+          Fd_down_mean = Fd_mean,
+          Fb_down_mean = Fb_mean,
+          Tsurf_mean = surf_temp_mean
+        )
+
+      valid <-
+        is.finite(PAR_obs$radiation_mean) &
+        is.finite(PAR_obs$PAR_model)
+
+      if (any(valid)) {
+
+        validation <- tibble(
+          datetime = datetime,
+          sensor_id = PAR_obs$location_ID_number[valid],
+          obs = PAR_obs$radiation_mean[valid],
+          mod = PAR_obs$PAR_model[valid],
+          resid = PAR_obs$resid[valid],
+          sensor_x = PAR_obs$x[valid],
+          sensor_y = PAR_obs$y[valid]
+        )
+
+      }
+
+      timeseries <- PAR_obs
+
+    } else {
+
+      # ============================================================
+      # CASE 2: No PAR observations (night)
+      # ============================================================
+
+      timeseries <- TOMST %>%
+        transmute(
+          datetime,
+
+          x,
+          y,
+
+          value_mean,
+          temperature_model,
+          Tair_mean_1m,
+
+          radiation_mean = NA_real_,
+          PAR_model      = NA_real_,
+          resid          = NA_real_,
+
+          LE_mean = LE_mean,
+          RH_mean = RH_mean,
+          VPD_mean = VPD_mean,
+          Fd_down_mean = Fd_mean,
+          Fb_down_mean = Fb_mean,
+          Tsurf_mean = surf_temp_mean
+        )
+
+    }
 
     list(
-      timeseries = PAR_obs,
-      validation = tibble(
-        datetime = datetime,
-        obs = PAR_obs$radiation_mean[valid],
-        mod = PAR_obs$PAR_model[valid],
-        resid = PAR_obs$resid[valid],
-        sensor_x = PAR_obs$x[valid],
-        sensor_y = PAR_obs$y[valid]
-      )
+      timeseries = timeseries,
+      validation = validation
     )
 
   }, error = function(e) {
@@ -211,7 +318,7 @@ process_datetime <- function(dt, i) {
   out
 }
 
-# run parallel, maar index meegeven
+# run parallel, but keep index
 with_progress({
   p <- progressor(along = all_datetimes)
 
@@ -232,30 +339,178 @@ with_progress({
 timeseries_all <- bind_rows(lapply(parts, `[[`, "timeseries"))
 val_data       <- bind_rows(lapply(parts, `[[`, "validation"))
 
+val_data_daily <- val_data %>%
+  mutate(
+    date = as.Date(datetime)
+  ) %>%
+  group_by(date, sensor_id) %>%
+  summarise(
+    obs = median(obs, na.rm = TRUE),
+    mod = median(mod, na.rm = TRUE),
+    n_hours = n(),
+    sensor_x = first(sensor_x),
+    sensor_y = first(sensor_y),
+    .groups = "drop"
+  ) %>%
+  filter(n_hours >= 8) %>% # only keep days in which more than 8 hourly timesteps are taken
+  mutate(
+    resid = mod - obs
+  )
+
+if(nrow(val_data_daily) == 0){
+  stop("No daily validation data remaining after n_hours filter.")
+}
+
+cat("\nDistribution of valid hourly observations per sensor-day:\n")
+print(table(val_data_daily$n_hours))
+
+cat(
+  sprintf(
+    "\nDaily validation dataset contains %d sensor-days\n",
+    nrow(val_data_daily)
+  )
+)
+
 # ---- Save ----
 dir.create("Output/timeseries", recursive = TRUE, showWarnings = FALSE)
 saveRDS(timeseries_all, paste0("Output/timeseries/timeseries_", season_string, ".rds"))
 
 dir.create("Output/validation/data", recursive = TRUE, showWarnings = FALSE)
-saveRDS(val_data, paste0("Output/validation/data/val_data_", season_string, ".rds"))
+saveRDS(val_data_daily, paste0("Output/validation/data/val_data_", season_string, ".rds"))
 
 # -----------------
 # VALIDATION STATS
 # -----------------
 
-mean_error <- mean(val_data$resid, na.rm = TRUE)
-sd_resid   <- sd(val_data$resid, na.rm = TRUE)
-rmse       <- sqrt(mean(val_data$resid^2, na.rm = TRUE))
-r2         <- cor(val_data$obs, val_data$mod, use = "complete.obs")^2
-nse        <- 1 - sum(val_data$resid^2, na.rm = TRUE) /
-  sum((val_data$obs - mean(val_data$obs, na.rm = TRUE))^2, na.rm = TRUE)
+# -----------------
+# TEMPORAL VALIDATION
+# -----------------
 
-cat("\nValidation statistics:\n")
-cat(sprintf("Mean Error: %.2f µmol m-2 s-1\n", mean_error))
-cat(sprintf("SD: %.2f µmol m-2 s-1\n", sd_resid))
-cat(sprintf("RMSE: %.2f µmol m-2 s-1\n", rmse))
-cat(sprintf("R²: %.2f\n", r2))
-cat(sprintf("NSE: %.2f\n", nse))
+temporal_metrics <- val_data_daily %>%
+  group_by(sensor_id) %>%
+  summarise(
+
+    temporal_pearson =
+      ifelse(
+        n() > 2,
+        cor(
+          obs,
+          mod,
+          method = "pearson",
+          use = "complete.obs"
+        ),
+        NA_real_
+      ),
+
+    temporal_spearman =
+      ifelse(
+        n() > 2,
+        cor(
+          obs,
+          mod,
+          method = "spearman",
+          use = "complete.obs"
+        ),
+        NA_real_
+      ),
+
+    n_days = n(),
+
+    .groups = "drop"
+  )
+
+saveRDS(
+  temporal_metrics,
+  paste0(
+    "Output/validation/data/temporal_metrics_",
+    season_string,
+    ".rds"
+  )
+)
+
+# -----------------
+# SPATIAL VALIDATION
+# -----------------
+
+spatial_metrics <- val_data_daily %>%
+  group_by(date) %>%
+  summarise(
+
+    n_sensors = n(),
+
+    spatial_pearson =
+      ifelse(
+        n() > 2,
+        cor(
+          obs,
+          mod,
+          method = "pearson",
+          use = "complete.obs"
+        ),
+        NA_real_
+      ),
+
+    spatial_spearman =
+      ifelse(
+        n() > 2,
+        cor(
+          obs,
+          mod,
+          method = "spearman",
+          use = "complete.obs"
+        ),
+        NA_real_
+      ),
+
+    .groups = "drop"
+  )
+
+saveRDS(
+  spatial_metrics,
+  paste0(
+    "Output/validation/data/spatial_metrics_",
+    season_string,
+    ".rds"
+  )
+)
+
+# -----------------
+# SUMMARY
+# -----------------
+
+cat("\nLight validation statistics:\n")
+
+cat(sprintf(
+  "\nTemporal Pearson r (median across sensors): %.2f\n",
+  median(
+    temporal_metrics$temporal_pearson,
+    na.rm = TRUE
+  )
+))
+
+cat(sprintf(
+  "Temporal Spearman rho (median across sensors): %.2f\n",
+  median(
+    temporal_metrics$temporal_spearman,
+    na.rm = TRUE
+  )
+))
+
+cat(sprintf(
+  "\nSpatial Pearson r (median across days): %.2f\n",
+  median(
+    spatial_metrics$spatial_pearson,
+    na.rm = TRUE
+  )
+))
+
+cat(sprintf(
+  "Spatial Spearman rho (median across days): %.2f\n",
+  median(
+    spatial_metrics$spatial_spearman,
+    na.rm = TRUE
+  )
+))
 
 # ---- Cleanup ----
 plan(sequential)

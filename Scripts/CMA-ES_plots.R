@@ -19,9 +19,9 @@ start_analysis <- Sys.time()
 # INPUT
 # -----------------
 
-season = "C13_50_generations_4_params"
+season = "R11_50_generations_5_params"
 
-number_of_params = 4
+number_of_params = 5
 
 # -----------------
 # PLOTS — Convergence visuals

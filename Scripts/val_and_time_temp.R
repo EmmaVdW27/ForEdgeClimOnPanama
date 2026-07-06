@@ -1,5 +1,5 @@
 ############################################################################################
-# Combined script: ForEdgeClim timeseries + validation + txtProgressBar
+# Combined script: ForEdgeClim timeseries + validation + txtProgressBar for temperature modelling
 #
 # Author: Emma Van de Walle - Q-ForestLab
 ############################################################################################
@@ -22,10 +22,10 @@ suppressPackageStartupMessages({
 handlers(global = TRUE)
 handlers("txtprogressbar")
 options(progressr.enable = TRUE)
-cores <- as.numeric(Sys.getenv("PBS_NUM_PPN", unset = 1))
-plan(multisession, workers = cores)
 
-print(paste("Using", availableCores(), "cores."))
+cores <- 50
+plan(multicore, workers = cores)
+print(paste("Using", cores, "cores."))
 
 start_analysis <- Sys.time()
 
@@ -33,16 +33,21 @@ start_analysis <- Sys.time()
 # INPUT
 # -----------------
 
-plotnr = "C13"
-season_string = "C13_50_gens_5_params_calibrated"
+plotnr = "C13" # C13 or R11
+season_string = "C13_calibrated"
 
 params = list(
+  # uncalibrated values:
+  # infl_macro_ref = 32.5, infl_soil_ref = 5, g_macro_ref = 25, k_soil = 1.225, u_ref = 1.6,
+  # omega = 0.52, Kb_v = 1.25,
+
   # calibrated values:
-  infl_macro_ref = 21.5908815, infl_soil_ref = 3.6561877, k_soil = 1.225, k_u = 0.7, u_ref = 0.6017737,
+  infl_macro_ref = 21.0959353, infl_soil_ref = 6.4076838, g_macro_ref = 20.4131636, k_soil = 1.0114076, u_ref = 0.3800997,
+  omega = 0.5266289, Kb_v = 0.5058042,
 
   # fixed values:
-  betad = 0.325, beta0 = 0.325, omega = 0.52,
-  Kd_v = 0.775, Kb_v = 1.25, omega_g_v = 0.13,
+  betad = 0.325, beta0 = 0.325,
+  Kd_v = 0.775, omega_g_v = 0.13,
 
   e_forest = 0.965, beta_lw = 0.325, omega_lw = 0.035,
   Kd_lw_v = 0.3, omega_g_lw_v = 0.055,
@@ -51,12 +56,11 @@ params = list(
   p_ground = 0.225,
 
   infl_forest_ref = 5,
-  g_macro_ref = 25,
   g_soil_ref = 10,
   g_forest_ref = 12.5,
 
-  gs_max = 0.004,
-  stomata_closure = 0.75
+  gs_max = 0.004, stomata_closure = 0.75,
+  k_u = 0.7
 )
 
 # ---- Time ----
@@ -138,6 +142,9 @@ process_datetime <- function(dt, i) {
       filter(z == 1) %>%
       select(x, y, temperature)
 
+    # ---- Mean model temperature at 1 m height ----
+    Tair_mean_1m <- mean(temp_air_grid$temperature, na.rm = TRUE)
+
     # ---- Nearest neighbour ----
     nn <- nn2(
       data = as.matrix(temp_air_grid[, c("x","y")]),
@@ -153,6 +160,7 @@ process_datetime <- function(dt, i) {
         datetime = datetime,
         temperature_model = temp_air_grid$temperature[idx],
         resid = temperature_model - value_mean,
+        Tair_mean_1m = Tair_mean_1m,
         LE_mean = LE_mean,
         RH_mean = RH_mean,
         VPD_mean = VPD_mean,
@@ -185,7 +193,7 @@ process_datetime <- function(dt, i) {
   out
 }
 
-# run parallel, maar index meegeven
+# run parallel, but keep index
 with_progress({
   p <- progressor(along = all_datetimes)
 

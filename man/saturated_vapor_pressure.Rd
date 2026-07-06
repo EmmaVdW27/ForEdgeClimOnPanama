@@ -7,10 +7,10 @@
 saturated_vapor_pressure(temp)
 }
 \arguments{
-\item{temp}{Forest surface temperature}
+\item{temp}{Forest surface temperature (°C)}
 }
 \value{
-Saturated vapor pressure
+Saturated vapor pressure (kPa)
 }
 \description{
 Function for saturated vapor pressure; this is the empirical equation of Tetens

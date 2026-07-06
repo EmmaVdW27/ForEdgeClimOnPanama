@@ -7,10 +7,10 @@
 calculate_G(net_rad_ground)
 }
 \arguments{
-\item{net_rad_ground}{Net radiation at ground surface}
+\item{net_rad_ground}{Net radiation at ground surface (W/m2)}
 }
 \value{
-G Ground heat flux
+G Ground heat flux (W/m2)
 }
 \description{
 Function to calculate ground heat flux G

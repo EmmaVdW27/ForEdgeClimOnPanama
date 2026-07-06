@@ -13,15 +13,9 @@ create_input_drivers <- function() {
   RH_input_file_csv <<- "Data/bci_cl_rh_elect.csv"
   u_input_file_csv <<- "Data/bci_ava_ws_elect.csv"
 
-  # plot parameters
-  req_height <<- 1
-  #plotnr <<- "R11" # C13 or R11
-
   # spacetime specifics
   lat <<- 9.108
   lon <<- -79.851
-  #length_transect <<- 60
-  #height_canopy <<- 35 # 33 for plot C13, 35 for plot R11
 
   # parameters for energy balance convergence
   energy_balance_tolerance <<- 2  # Maximum energy balance closure error between successive iteration steps to reach convergence (W/m2)

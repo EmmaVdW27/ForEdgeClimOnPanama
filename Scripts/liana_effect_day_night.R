@@ -15,7 +15,7 @@ library(grid)
 #########
 
 multiple_treatment_plots = "yes" # yes or no
-temperature_from_model = "Tair_mean_1m" # Tair_mean_1m or temperature_model (27 voxels)
+temperature_from_model = "temperature_model" # Tair_mean_1m or temperature_model (27 voxels)
 
 input_model_C13 <- readRDS(
   "Output/timeseries/data/v1.0/timeseries_C13_v1.0_calibrated.rds"
@@ -280,22 +280,32 @@ if(multiple_treatment_plots == "no"){
 } else{
 
   control_plot_v2 <-
-    full_join(C13_plot_v2, C8_plot_v2,
-              by = c("date","period")) %>%
-    transmute(
-      date,
-      period,
-      mod_control_v2 = (mod_C13_v2 + mod_C8_v2) / 2
-    )
+    full_join(
+      C13_plot_v2,
+      C8_plot_v2,
+      by = c("date","period")
+    ) %>%
+    mutate(
+      mod_control_v2 = rowMeans(
+        cbind(mod_C13_v2, mod_C8_v2),
+        na.rm = TRUE
+      )
+    ) %>%
+    select(date, period, mod_control_v2)
 
   removal_plot_v2 <-
-    full_join(R11_plot_v2, R7_plot_v2,
-              by = c("date","period")) %>%
-    transmute(
-      date,
-      period,
-      mod_removal_v2 = (mod_R11_v2 + mod_R7_v2) / 2
-    )
+    full_join(
+      R11_plot_v2,
+      R7_plot_v2,
+      by = c("date","period")
+    ) %>%
+    mutate(
+      mod_removal_v2 = rowMeans(
+        cbind(mod_R11_v2, mod_R7_v2),
+        na.rm = TRUE
+      )
+    ) %>%
+    select(date, period, mod_removal_v2)
 
   control_extra_v2 <-
     full_join(
@@ -307,16 +317,47 @@ if(multiple_treatment_plots == "no"){
       date,
       period,
 
-      LE_control    = (LE_C13 + LE_C8) / 2,
-      RH_control    = (RH_C13 + RH_C8) / 2,
-      VPD_control   = (VPD_C13 + VPD_C8) / 2,
-      Fd_control    = (Fd_C13 + Fd_C8) / 2,
-      Fb_control    = (Fb_C13 + Fb_C8) / 2,
-      Tsurf_control = (Tsurf_C13 + Tsurf_C8) / 2,
-
-      Tair_mod_control = (Tair_mod_C13 + Tair_mod_C8) / 2,
-      Tair_obs_control = (Tair_obs_C13 + Tair_obs_C8) / 2
-    )
+      LE_control =
+        rowMeans(
+          cbind(LE_C13, LE_C8),
+          na.rm = TRUE
+        ),
+      RH_control =
+        rowMeans(
+          cbind(RH_C13, RH_C8),
+          na.rm = TRUE
+        ),
+      VPD_control =
+        rowMeans(
+          cbind(VPD_C13, VPD_C8),
+          na.rm = TRUE
+        ),
+      Fd_control =
+        rowMeans(
+          cbind(Fd_C13, Fd_C8),
+          na.rm = TRUE
+        ),
+      Fb_control =
+        rowMeans(
+          cbind(Fb_C13, Fb_C8),
+          na.rm = TRUE
+        ),
+      Tsurf_control =
+        rowMeans(
+          cbind(Tsurf_C13, Tsurf_C8),
+          na.rm = TRUE
+        ),
+      Tair_obs_control =
+        rowMeans(
+          cbind(Tair_obs_C13, Tair_obs_C8),
+          na.rm = TRUE
+        ),
+      Tair_mod_control =
+        rowMeans(
+          cbind(Tair_mod_C13, Tair_mod_C8),
+          na.rm = TRUE
+        )
+      )
 
   removal_extra_v2 <-
     full_join(
@@ -328,15 +369,46 @@ if(multiple_treatment_plots == "no"){
       date,
       period,
 
-      LE_removal    = (LE_R11 + LE_R7) / 2,
-      RH_removal    = (RH_R11 + RH_R7) / 2,
-      VPD_removal   = (VPD_R11 + VPD_R7) / 2,
-      Fd_removal    = (Fd_R11 + Fd_R7) / 2,
-      Fb_removal    = (Fb_R11 + Fb_R7) / 2,
-      Tsurf_removal = (Tsurf_R11 + Tsurf_R7) / 2,
-
-      Tair_mod_removal = (Tair_mod_R11 + Tair_mod_R7) / 2,
-      Tair_obs_removal = (Tair_obs_R11 + Tair_obs_R7) / 2
+      LE_removal =
+        rowMeans(
+          cbind(LE_R11, LE_R7),
+          na.rm = TRUE
+        ),
+      RH_removal =
+        rowMeans(
+          cbind(RH_R11, RH_R7),
+          na.rm = TRUE
+        ),
+      VPD_removal =
+        rowMeans(
+          cbind(VPD_R11, VPD_R7),
+          na.rm = TRUE
+        ),
+      Fd_removal =
+        rowMeans(
+          cbind(Fd_R11, Fd_R7),
+          na.rm = TRUE
+        ),
+      Fb_removal =
+        rowMeans(
+          cbind(Fb_R11, Fb_R7),
+          na.rm = TRUE
+        ),
+      Tsurf_removal =
+        rowMeans(
+          cbind(Tsurf_R11, Tsurf_R7),
+          na.rm = TRUE
+        ),
+      Tair_obs_removal =
+        rowMeans(
+          cbind(Tair_obs_R11, Tair_obs_R7),
+          na.rm = TRUE
+        ),
+      Tair_mod_removal =
+        rowMeans(
+          cbind(Tair_mod_R11, Tair_mod_R7),
+          na.rm = TRUE
+        )
     )
 }
 
@@ -348,11 +420,11 @@ if(multiple_treatment_plots == "no"){
 
 comparison <-
   control_plot %>%
-  inner_join(removal_plot, by = c("date","period")) %>%
-  inner_join(control_plot_v2, by = c("date","period")) %>%
-  inner_join(removal_plot_v2, by = c("date","period")) %>%
-  inner_join(control_extra_v2, by = c("date","period")) %>%
-  inner_join(removal_extra_v2, by = c("date","period"))
+  full_join(removal_plot, by = c("date","period")) %>%
+  full_join(control_plot_v2, by = c("date","period")) %>%
+  full_join(removal_plot_v2, by = c("date","period")) %>%
+  full_join(control_extra_v2, by = c("date","period")) %>%
+  full_join(removal_extra_v2, by = c("date","period"))
 
 ###############################################################################
 # REMOVE PERIOD

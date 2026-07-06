@@ -9,9 +9,13 @@ de_dT_PM(temp, T_air_K, net_rad, G, gamma_eff)
 \arguments{
 \item{temp}{Forest surface temperature (K)}
 
+\item{T_air_K}{Air temperature in Kelvin (K)}
+
 \item{net_rad}{Net radiation (W/m2)}
 
-\item{den}{Voxel density (0-1)}
+\item{G}{Ground heat flux (W/m2)}
+
+\item{gamma_eff}{effective psychrometric constant (kPa/K)}
 }
 \value{
 Derivative of energy balance wrt surface temperature

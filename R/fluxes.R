@@ -1,7 +1,7 @@
 #' Function to calculate ground heat flux G
 #'
-#' @param net_rad_ground Net radiation at ground surface
-#' @return G Ground heat flux
+#' @param net_rad_ground Net radiation at ground surface (W/m2)
+#' @return G Ground heat flux (W/m2)
 #' @export
 #'
 # G is positive if E is entering the soil
@@ -14,9 +14,9 @@ calculate_G <- function(net_rad_ground){
 #' Function to simulate air to air diffusion via Fourier's law of heat conduction. This is done in 3D.
 #' In this function, air temperature is updated and ready to use for the sensible heat flux calculation.
 #'
-#' @param temp_air Air temperature
-#' @param temp_soil Ground surface temperature
-#' @return total_diffusion Diffusion flux per voxel
+#' @param temp_air Air temperature (K)
+#' @param temp_soil Ground surface temperature (W/m2)
+#' @return total_diffusion Diffusion flux per voxel (W/m2)
 #' @export
 #'
 calculate_D <- function(temp_air, temp_soil){
@@ -73,9 +73,9 @@ calculate_D <- function(temp_air, temp_soil){
 
 #' Function to calculate sensible heat transfer between forest surface and air
 #'
-#' @param T_surf Forest surface temperature
-#' @param T_air Air temperature
-#' @return H Sensible heat flux
+#' @param T_surf Forest surface temperature (K)
+#' @param T_air Air temperature (K)
+#' @return H Sensible heat flux (W/m2)
 #' @export
 #'
 calculate_H <- function(T_surf,T_air){
@@ -90,8 +90,8 @@ calculate_H <- function(T_surf,T_air){
 
 #' Function for saturated vapor pressure; this is the empirical equation of Tetens
 #'
-#' @param temp Forest surface temperature
-#' @return Saturated vapor pressure
+#' @param temp Forest surface temperature (°C)
+#' @return Saturated vapor pressure (kPa)
 #' @export
 #'
 saturated_vapor_pressure <- function(temp) {
@@ -105,8 +105,7 @@ saturated_vapor_pressure <- function(temp) {
 #' @param T_air_C  Air temperature (°C)
 #' @param SW_down  Downward shortwave radiation (W/m2)
 #' @param net_rad  Net radiation (W/m2)
-#' @param den      Voxel density (0-1)
-#' @param RH       Relative humidity (%)
+#' @param G        Ground heat flux (W/m2)
 #' @return LE      Latent heat flux (W/m2)
 #'
 calculate_LE_PM_C <- function(T_surf_C, T_air_C, SW_down, net_rad, G) {
@@ -158,9 +157,10 @@ calculate_LE_PM_C <- function(T_surf_C, T_air_C, SW_down, net_rad, G) {
 #' Function to calculate latent heat flux LE via Priestley-Taylor approximation
 #' (~ evapotranspiration, ET: LE = L_v . ET with L_v = latent heat of vaporization of water (J/kg))
 #'
-#' @param temperature Forest surface temperature
-#' @param net_rad Net radiation
-#' @return LE Latent heat flux
+#' @param temperature Forest surface temperature (K)
+#' @param net_rad     Net radiation (W/m2)
+#' @param G           Ground heat flux (W/m2)
+#' @return LE Latent heat flux (W/m2)
 #' @export
 #'
 calculate_LE <- function(temperature, net_rad, G) {
@@ -171,7 +171,7 @@ calculate_LE <- function(temperature, net_rad, G) {
   # LE cannot be negative
   LE[LE<0] = 0
 
-  return(LE) # LE in W/m²
+  return(LE)
 }
 
 

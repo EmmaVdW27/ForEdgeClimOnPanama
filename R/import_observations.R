@@ -159,7 +159,7 @@ import_rad_observations <- function(time){
 
 }
 
-#' Function to import relative humidity and wind speed observations from BCI stations: Lutz tower and clearing
+#' Function to import relative humidity and wind speed observations from BCI stations: resp. forest clearing and AVA tower
 #'
 #' @param time yyyy-mm-dd hh:mm:ss in UTC
 #' @return RH relative humidity

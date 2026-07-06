@@ -2,7 +2,7 @@
 % Please edit documentation in R/import_observations.R
 \name{import_RH_u_observations}
 \alias{import_RH_u_observations}
-\title{Function to import relative humidity and wind speed observations from BCI stations: Lutz tower and clearing}
+\title{Function to import relative humidity and wind speed observations from BCI stations: resp. forest clearing and AVA tower}
 \usage{
 import_RH_u_observations(time)
 }
@@ -15,5 +15,5 @@ RH relative humidity
 u_top wind speed above canopy
 }
 \description{
-Function to import relative humidity and wind speed observations from BCI stations: Lutz tower and clearing
+Function to import relative humidity and wind speed observations from BCI stations: resp. forest clearing and AVA tower
 }

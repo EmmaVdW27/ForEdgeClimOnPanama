@@ -1,5 +1,5 @@
 ############################################################################################
-# This script optimizes ForEdgeClim parameters for the whole year with the CMA-ES algorithm (via cmaesr).
+# This script optimizes ForEdgeClim shortwave radiation parameters for the whole year with the CMA-ES algorithm (via cmaesr).
 # In the objective function, we minimize RMSE (Root Mean Square Error).
 #
 # Author: Emma Van de Walle - Q-ForestLab
@@ -23,9 +23,9 @@ suppressPackageStartupMessages({
 })
 
 # Parallelization on HPC (supercomputer)
-cores <- as.numeric(Sys.getenv("PBS_NUM_PPN", unset = 1))
+cores <- 32
 plan(multicore, workers = cores)
-print(paste("Using", availableCores(), "cores."))
+print(paste("Using", cores, "cores."))
 
 start_analysis <- Sys.time()
 
@@ -33,32 +33,32 @@ start_analysis <- Sys.time()
 # INPUT #
 #########
 
-plotnr = "C8" # C13 or R11
+plotnr = "C8" # R7 or C8
 
-date_string <- 'C8_50_generations_3_params'
+date_string <- 'C8_50_generations_2_params'
 max_it        <- 49     # generations (there will be max_it + 1 generations)
 
 # 4 selected calibration days, resp. most sunny and sun-variable day, most humid and diffuse light day, most windy day, and
 # day with most day-night temperature difference
 selected_days <- as.Date(c(
   "2023-03-28",
-  "2023-11-12",
-  "2023-12-21",
-  "2023-06-05"
+  "2023-11-02",
+  "2023-12-20",
+  "2023-06-07"
 ))
 
-# For each day: 24 hours (0–23h)
+# For each day: hours 11–22 UTC
 datetimes <- unlist(
   lapply(selected_days, function(d) {
     seq(
-      from = as.POSIXct(paste0(d, " 00:00:00"), tz = "UTC"),
-      to   = as.POSIXct(paste0(d, " 23:00:00"), tz = "UTC"),
+      from = as.POSIXct(paste0(d, " 11:00:00"), tz = "UTC"),
+      to   = as.POSIXct(paste0(d, " 22:00:00"), tz = "UTC"),
       by   = "hour"
     )
   })
 )
 
-stop_fitness  <- 1      # RMSE target (°C)
+stop_fitness  <- 2      # corr target
 lambda        <- NULL   # if NULL we set a heuristic later
 
 #########
@@ -100,12 +100,11 @@ if(plotnr == "C13"){
 # -----------------
 # Key parameters
 param_names <- c(
-  "beta0",
-  "Kb_v",
-  "Kd_v"
+  "omega",
+  "Kb_v"
 )
 # Fixed parameters (SW RTM)
-betad <<- 0.325; omega <<- 0.52; omega_g_v <<- 0.13;
+betad <<- 0.325; beta0 <<- 0.325; omega_g_v <<- 0.13; Kd_v <<- 0.775;
 # Fixed parameters (LW RTM)
 e_forest <<- 0.965; beta_lw <<- 0.325; omega_lw <<- 0.035; Kd_lw_v <<- 0.3; omega_g_lw_v <<- 0.055;
 # Fixed parameters (OTHER)
@@ -113,20 +112,18 @@ h <<- 10; g_macro_ref <<- 25; infl_macro_ref <<- 32.5; infl_soil_ref <<- 5; infl
 p_ground <<- 0.225; g_soil_ref <<- 10; k_soil <<- 1.225; gs_max <<- 0.004; stomata_closure <<- 0.75; k_u <<- 0.7; u_ref <<- 1.6
 
 # Initial values (mean value from uniform parameter distributions)
-start_vals <- c(0.325, 1.25, 0.775)
+start_vals <- c(0.52, 1.25)
 
 
 # Bounds
 lower_bounds <- c(
-  0.20,
-  0.50,
-  0.60
+  0.43,
+  0.50
 )
 
 upper_bounds <- c(
-  0.45,
-  2.00,
-  0.95
+  0.61,
+  2.00
 )
 
 
@@ -143,9 +140,8 @@ create_physical_constants()
 # Helper to set parameters
 set_params_from_vec <- function(par) {
 
-  beta0 <<- par[1]
+  omega <<- par[1]
   Kb_v  <<- par[2]
-  Kd_v  <<- par[3]
 
 }
 
@@ -160,7 +156,7 @@ obs_data <- list()
 grid_base <- voxel_TLS$grid
 grid_base$density <- grid_base$density * scale_factor
 
-# 👉 gebruik start_vals als tijdelijke parameters
+# use start_vals as temporary parameters
 set_params_from_vec(start_vals)
 
 for (dt in datetimes) {
@@ -185,7 +181,7 @@ for (dt in datetimes) {
     import_rad_observations(datetime)
     import_RH_u_observations(datetime)
 
-    # run model once (met tijdelijke parameters)
+    # run model once (with temporary variables)
     run_foredgeclim(grid_base, datetime)
   }
 
@@ -241,7 +237,7 @@ evaluate_par <- function(par) {
 
         sw_grid$PAR_model <-
           (sw_grid$F_d_down +
-             sw_grid$F_b_down) * 2.02
+             sw_grid$F_b_down) * 2.02 # no futher conversion needed since we check correlations and not absolute values
 
         grid_coords <-
           as.matrix(sw_grid[, c("X","Y")])
@@ -249,14 +245,11 @@ evaluate_par <- function(par) {
         sensor_coords <-
           as.matrix(PAR_obs[, c("x","y")])
 
+        # nearest neighbour
         nn <- nn2(
-          data = grid_coords,
-          query = sensor_coords,
-          k = 1
+          data = grid_coords, query = sensor_coords, k = 1 # amount of nearest neighbours
         )
-
-        PAR_obs$PAR_model <-
-          sw_grid$PAR_model[nn$nn.idx[,1]]
+        PAR_obs$PAR_model <- sw_grid$PAR_model[nn$nn.idx[,1]]
 
         valid <-
           is.finite(PAR_obs$radiation_mean) &
@@ -269,97 +262,192 @@ evaluate_par <- function(par) {
 
         sim <- PAR_obs$PAR_model[valid]
 
-        diffs <- obs - sim
+        sensor_ids <- PAR_obs$location_ID_number[valid]
 
-        list(
-          ok          = TRUE,
-          sse         = sum((sim - obs)^2),
-          n           = length(sim),
-          sum_sim     = sum(sim),
-          sum_obs     = sum(obs),
-          sum_sim2    = sum(sim^2),
-          sum_obs2    = sum(obs^2),
-          sum_sim_obs = sum(sim * obs),
-          sum_diff    = sum(diffs[valid]),
-          sum_diff2   = sum(diffs[valid]^2)
+        data.frame(
+          date = as.Date(datetime),
+          sensor_id = sensor_ids,
+          obs = obs,
+          sim = sim
         )
-
       }, error = function(e) {
         warning(paste("Crash during evaluation:", format(datetime), "-", e$message))
-        list(
-          ok = FALSE,
-          sse = NA_real_, n = 0L,
-          sum_sim = 0, sum_obs = 0,
-          sum_sim2 = 0, sum_obs2 = 0,
-          sum_sim_obs = 0,
-          sum_diff = 0,
-          sum_diff2 = 0
-        )
+        NULL
       })
     },
     future.seed = TRUE
   )
 
-  # ---- Aggregate ----
-  sse_total         <- sum(vapply(parts, `[[`, numeric(1), "sse"),         na.rm = TRUE)
-  n_total           <- sum(vapply(parts, `[[`, integer(1), "n"))
-  sum_sim_total     <- sum(vapply(parts, `[[`, numeric(1), "sum_sim"),     na.rm = TRUE)
-  sum_obs_total     <- sum(vapply(parts, `[[`, numeric(1), "sum_obs"),     na.rm = TRUE)
-  sum_sim2_total    <- sum(vapply(parts, `[[`, numeric(1), "sum_sim2"),    na.rm = TRUE)
-  sum_obs2_total    <- sum(vapply(parts, `[[`, numeric(1), "sum_obs2"),    na.rm = TRUE)
-  sum_sim_obs_total <- sum(vapply(parts, `[[`, numeric(1), "sum_sim_obs"), na.rm = TRUE)
-  sum_diff_total  <- sum(vapply(parts, `[[`, numeric(1), "sum_diff"),  na.rm = TRUE)
-  sum_diff2_total <- sum(vapply(parts, `[[`, numeric(1), "sum_diff2"), na.rm = TRUE)
-  n_failed          <- sum(!vapply(parts, `[[`, logical(1), "ok"))
+  all_data <- bind_rows(parts)
 
-  if (n_total == 0) {
+  n_failed <- sum(vapply(parts, is.null, logical(1)))
+
+  if(nrow(all_data) == 0){
     return(list(
-      RMSE = 1e6,
-      metrics = list(RMSE = NA_real_, R2 = NA_real_, NSE = NA_real_, ME = NA_real_),
-      n_total = 0L,
-      n_failed = n_failed
+      objective = 1e6,
+      metrics = list(
+        temporal_pearson = NA,
+        temporal_spearman = NA,
+        spatial_pearson = NA,
+        spatial_spearman = NA
+      ),
+      n_total = 0,
+      n_failed = length(parts)
     ))
   }
 
-  rmse <- sqrt(sse_total / n_total)
+  daily_data <- all_data %>%
+    group_by(date, sensor_id) %>%
+    summarise(
+      obs = median(obs, na.rm = TRUE),
+      sim = median(sim, na.rm = TRUE),
+      n_hours = n(),
+      .groups = "drop"
+    )
 
-  mean_sim <- sum_sim_total / n_total
-  mean_obs <- sum_obs_total / n_total
+  # only keep days with min 8 hourly observations
+  daily_data <- daily_data %>%
+    filter(n_hours >= 8)
 
-  denom_nse <- sum_obs2_total - n_total * mean_obs^2
-  nse <- if (denom_nse > 0) 1 - sse_total / denom_nse else NA_real_
-
-  cov_num     <- sum_sim_obs_total - n_total * mean_sim * mean_obs
-  var_sim_num <- sum_sim2_total    - n_total * mean_sim^2
-  var_obs_num <- sum_obs2_total    - n_total * mean_obs^2
-
-  r2 <- if (var_sim_num > 0 && var_obs_num > 0) (cov_num^2) / (var_sim_num * var_obs_num) else NA_real_
-
-  me <- (sum_sim_total - sum_obs_total) / n_total
-
-  # SD of residuals (sample SD)
-  sd_res <- if (n_total > 1) {
-    sqrt((sum_diff2_total - (sum_diff_total^2) / n_total) / (n_total - 1))
-  } else {
-    NA_real_
+  if(nrow(daily_data) == 0){
+    return(list(
+      objective = 1e6,
+      metrics = list(
+        temporal_pearson = NA,
+        temporal_spearman = NA,
+        spatial_pearson = NA,
+        spatial_spearman = NA
+      ),
+      n_total = 0,
+      n_failed = length(parts)
+    ))
   }
 
+  temporal_metrics <- daily_data %>%
+    group_by(sensor_id) %>%
+    summarise(
+
+      temporal_pearson =
+        ifelse(
+          n() > 2,
+          cor(
+            obs,
+            sim,
+            method = "pearson",
+            use = "complete.obs"
+          ),
+          NA_real_
+        ),
+
+      temporal_spearman =
+        ifelse(
+          n() > 2,
+          cor(
+            obs,
+            sim,
+            method = "spearman",
+            use = "complete.obs"
+          ),
+          NA_real_
+        ),
+
+      .groups = "drop"
+    )
+
+  temporal_pearson <-
+    median(
+      temporal_metrics$temporal_pearson,
+      na.rm = TRUE
+    )
+
+  temporal_spearman <-
+    median(
+      temporal_metrics$temporal_spearman,
+      na.rm = TRUE
+    )
+
+  spatial_metrics <- daily_data %>%
+    group_by(date) %>%
+    summarise(
+
+      spatial_pearson =
+        ifelse(
+          n() > 2,
+          cor(
+            obs,
+            sim,
+            method = "pearson",
+            use = "complete.obs"
+          ),
+          NA_real_
+        ),
+
+      spatial_spearman =
+        ifelse(
+          n() > 2,
+          cor(
+            obs,
+            sim,
+            method = "spearman",
+            use = "complete.obs"
+          ),
+          NA_real_
+        ),
+
+      .groups = "drop"
+    )
+
+  spatial_pearson <-
+    median(
+      spatial_metrics$spatial_pearson,
+      na.rm = TRUE
+    )
+
+  spatial_spearman <-
+    median(
+      spatial_metrics$spatial_spearman,
+      na.rm = TRUE
+    )
+  objective <-
+    4 -
+    (
+      temporal_pearson +
+        temporal_spearman +
+        spatial_pearson +
+        spatial_spearman
+    )
 
   list(
-    RMSE = rmse,
-    metrics = list(RMSE = rmse, R2 = r2, NSE = nse, ME = me, SD = sd_res),
-    n_total = n_total,
+    objective = objective,
+
+    metrics = list(
+
+      temporal_pearson =
+        temporal_pearson,
+
+      temporal_spearman =
+        temporal_spearman,
+
+      spatial_pearson =
+        spatial_pearson,
+
+      spatial_spearman =
+        spatial_spearman
+
+    ),
+
+    n_total = nrow(daily_data),
+
     n_failed = n_failed
   )
 }
 
 # -----------------
-# COST = OBJECTIVE FUNCTION (RMSE)
+# COST = OBJECTIVE FUNCTION
 # -----------------
-compute_rmse <- function(par) {
-  evaluate_par(par)$RMSE
+compute_objective <- function(par) {
+  evaluate_par(par)$objective
 }
-
 
 # -----------------
 # EXTRA METRICS: RMSE, R2, NSE, ME, SD
@@ -373,7 +461,7 @@ compute_metrics <- function(par) {
 # -------------------
 # Wrapper around objective function so logging is performed
 wrapped_obj_fn <- function(x) {
-  rmse <- compute_rmse(x)
+  objective <- compute_objective(x)
   .eval_counter <<- .eval_counter + 1L
   setTxtProgressBar(pb, .eval_counter)
   # infer generation and offspring id from eval count and lambda
@@ -384,11 +472,11 @@ wrapped_obj_fn <- function(x) {
     eval_id = .eval_counter,
     iter = gen,
     offspring_id = off,
-    rmse = rmse,
+    objective = objective,
     time = Sys.time()
   ) %>% dplyr::bind_cols(tibble::as_tibble_row(stats::setNames(as.list(as.numeric(x)), param_names)))
   offspring_log <<- dplyr::bind_rows(offspring_log, row)
-  rmse
+  objective
 }
 
 # -----------------
@@ -398,7 +486,7 @@ wrapped_obj_fn <- function(x) {
 # Necessary to set the objective function (compute_rmse) into a readable format for cmaesr, ie, cmaesr needs a smoof object
 dim_par <- length(start_vals)
 obj_logged <- smoof::makeSingleObjectiveFunction(
-  name = "ForEdgeClim_RMSE_logged",
+  name = "ForEdgeClim_correlation_logged",
   fn   = function(x) wrapped_obj_fn(x), # function to be optimized
   has.simple.signature = TRUE, # fn accepts a simple vector as input, not a list
   par.set = ParamHelpers::makeNumericParamSet(len = dim_par, lower = lower_bounds, upper = upper_bounds), # number of params and search space (lower/upper bounds)
@@ -414,7 +502,7 @@ offspring_log <- tibble::tibble(
   eval_id = integer(),
   iter    = integer(),           # generation index (1-based)
   offspring_id = integer(),      # lambda within generation
-  rmse    = numeric(),
+  objective    = numeric(),
   time    = as.POSIXct(NA, tz = "UTC")
 ) %>%
   dplyr::bind_cols(tibble::as_tibble_row(stats::setNames(as.list(rep(NA_real_, dim_par)), param_names))) %>%
@@ -503,7 +591,7 @@ param_mat_cols <- param_names
 generation_log <- offspring_log %>%
   dplyr::group_by(iter) %>%
   dplyr::summarise(
-    best_value = min(rmse, na.rm = TRUE), # get lowest RMSE within each generation
+    best_value = min(objective, na.rm = TRUE), # get lowest RMSE within each generation
     params = list(as.matrix(dplyr::pick(dplyr::all_of(param_mat_cols)))), # make a list with for every generation a lambda x d matrix with paramvalues
     .groups = "drop"
   ) %>%
@@ -532,21 +620,23 @@ readr::write_csv(generation_log, logfile_gener)
 
 # ---- Search best offspring based on RMSE ----
 best_offspring <- offspring_log %>%
-  dplyr::filter(is.finite(rmse)) %>%
-  dplyr::slice_min(rmse, n = 1)   # row with lowest RMSE
+  dplyr::filter(is.finite(objective)) %>%
+  dplyr::slice_min(objective, n = 1)   # row with lowest RMSE
 
 # Get corresponding parameter-vector
-best_offspring_par <- best_offspring %>%
-  dplyr::select(dplyr::all_of(param_names)) %>%
-  as.numeric()
+best_offspring_par <- unlist(
+  best_offspring %>%
+    dplyr::select(dplyr::all_of(param_names)),
+  use.names = FALSE
+)
 
 # Console summaries
 cat("\nOptimised parameters (final):\n")
 print(res$best.param)
-cat("\nMinimal RMSE observed:\n")
+cat("\nBest objective value:\n")
 print(res$best.fitness)
-cat("\nBest offspring based on RMSE in offspring_log (should be same as above):\n")
-print(best_offspring$rmse)
+cat("\nBest offspring based on objective in offspring_log (should be same as above):\n")
+print(best_offspring$objective)
 
 # -----------------
 # EXTRA METRICS FOR BEST PARAMETERS SET

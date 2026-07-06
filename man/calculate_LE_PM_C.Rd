@@ -15,9 +15,7 @@ calculate_LE_PM_C(T_surf_C, T_air_C, SW_down, net_rad, G)
 
 \item{net_rad}{Net radiation (W/m2)}
 
-\item{den}{Voxel density (0-1)}
-
-\item{RH}{Relative humidity (\%)}
+\item{G}{Ground heat flux (W/m2)}
 }
 \value{
 LE      Latent heat flux (W/m2)

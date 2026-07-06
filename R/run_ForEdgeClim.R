@@ -45,24 +45,6 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
   z_dim <<- max(z_coords)  # Length in z-direction
 
 
-  #-------------------------------------------
-
-
-  ###########################################
-  # CONDUCTANCES AND DISTANCES OF INFLUENCE #
-  ###########################################
-
-  # u_eff = max(0.1, u_top) # u_top shouldn't be zero
-  #
-  # g_forest <<- g_forest_ref / u_eff * wind_factor
-  # g_soil   <<- g_soil_ref   / u_eff * wind_factor
-  # g_macro  <<- g_macro_ref  * u_eff / wind_factor
-  #
-  #
-  infl_soil   <<- infl_soil_ref   # / u_eff * wind_factor
-  infl_forest <<- infl_forest_ref # / u_eff * wind_factor
-  infl_macro  <<- infl_macro_ref  # * u_eff / wind_factor
-
   ###########################################
   # WIND MODULE
   ###########################################
@@ -76,7 +58,7 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
 
   # Sort all voxels:
   # - first by column (xy_id)
-  # - then by height (descending z → from canopy top downward)
+  # - then by height (descending z from canopy top downwards)
   ord <- order(xy_id, -z_coords)
 
   # Apply sorting
@@ -108,10 +90,7 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
   u <- numeric(length(den))
   u[ord] <- u_sorted
 
-  ###########################################
-  # CONDUCTANCES                            #
-  ###########################################
-
+  # Conductances:
   g_wind <- pmax(0.1, sqrt(u / u_ref))
 
   g_forest <<- g_forest_ref * g_wind
@@ -120,27 +99,14 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
   # no wind dependence for soil conductance
   g_soil   <<- g_soil_ref
 
-  ###########################################
-  # PLOT (vertical profile)                #
-  ###########################################
-
-  # # mid column
-  # mid_x <- round(mean(x_coords))
-  # mid_y <- round(mean(y_coords))
-  #
-  # idx <- which(x_coords == mid_x & y_coords == mid_y)
-  # idx_sorted <- idx[order(z_coords[idx])]
-  #
-  # p = plot(u[idx_sorted], z_coords[idx_sorted], type = "l",
-  #      xlab = "Wind speed (m/s)", ylab = "Height (m)",
-  #      main = "Vertical wind profile")
-  # print(p)
-
-  #-------------------------------------------
+  # Distances of influence stay unadjusted:
+  infl_soil   <<- infl_soil_ref
+  infl_forest <<- infl_forest_ref
+  infl_macro  <<- infl_macro_ref
 
 
   #############################
-  # INITIALIZING TEMPERATURES #
+  # INITIALIsING TEMPERATURES #
   #############################
 
   # First longwave RTM for initializing temperatures
@@ -314,20 +280,6 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
     micro_grid$temperature <- micro_grid$temperature - ifelse(energy_balance_surf == 0, 0, W*energy_balance_surf/de_dT_PM(micro_grid$temperature, T_air_vec, net_radiation, G_voxel, latent_flux_res$gamma_eff) )
 
     # Determine planes-averaged surface temperature (to be used in T_air_Vec update for zero-density voxels).
-    # micro_grid <- micro_grid |>
-    #   group_by(z) |>
-    #   mutate(mean_temp_z = mean(temperature[den>0], na.rm = TRUE)) |>
-    #   ungroup()
-    # micro_grid <- micro_grid |>
-    #   group_by(y) |>
-    #   mutate(mean_temp_y = mean(temperature[den>0], na.rm = TRUE)) |>
-    #   ungroup()
-    # micro_grid <- micro_grid |>
-    #   group_by(x) |>
-    #   mutate(mean_temp_x = mean(temperature[den>0], na.rm = TRUE)) |>
-    #   ungroup()
-    # micro_grid$mean_temp = (micro_grid$mean_temp_x + micro_grid$mean_temp_y + micro_grid$mean_temp_z)/3
-
     temp <- micro_grid$temperature
     mask<- as.numeric(den > 0)
 

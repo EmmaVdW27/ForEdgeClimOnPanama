@@ -1,5 +1,5 @@
 ############################################################################################
-# This script optimizes ForEdgeClim parameters for the whole year with the CMA-ES algorithm (via cmaesr).
+# This script optimizes ForEdgeClim temperature parameters for the whole year with the CMA-ES algorithm (via cmaesr).
 # In the objective function, we minimize RMSE (Root Mean Square Error).
 #
 # Author: Emma Van de Walle - Q-ForestLab
@@ -23,9 +23,9 @@ suppressPackageStartupMessages({
 })
 
 # Parallelization on HPC (supercomputer)
-cores <- as.numeric(Sys.getenv("PBS_NUM_PPN", unset = 1))
+cores <- 32
 plan(multicore, workers = cores)
-print(paste("Using", availableCores(), "cores."))
+print(paste("Using", cores, "cores."))
 
 start_analysis <- Sys.time()
 
@@ -42,9 +42,9 @@ max_it        <- 49     # generations (there will be max_it + 1 generations)
 # day with most day-night temperature difference
 selected_days <- as.Date(c(
   "2023-03-28",
-  "2023-11-12",
-  "2023-12-21",
-  "2023-06-05"
+  "2023-11-02",
+  "2023-12-20",
+  "2023-06-07"
 ))
 
 # For each day: 24 hours (0–23h)
@@ -98,22 +98,24 @@ if(plotnr == "C13"){
 # PARAMETER NAMES & DEFAULTS
 # -----------------
 # Key parameters
-param_names <- c("infl_macro_ref", "infl_soil_ref", "k_soil", "k_u", "u_ref")
+param_names <- c("infl_macro_ref", "infl_soil_ref", "g_macro_ref ", "k_soil", "u_ref")
+# SW calibrated parameters from SW calibration
+omega <<- 0.5266289; Kb_v <<- 0.5058042;
 # Fixed parameters (SW RTM)
-betad <<- 0.325; beta0 <<- 0.325; omega <<- 0.52; Kd_v <<- 0.775; Kb_v <<- 1.25; omega_g_v <<- 0.13;
+betad <<- 0.325; beta0 <<- 0.325; Kd_v <<- 0.775; omega_g_v <<- 0.13;
 # Fixed parameters (LW RTM)
 e_forest <<- 0.965; beta_lw <<- 0.325; omega_lw <<- 0.035; Kd_lw_v <<- 0.3; omega_g_lw_v <<- 0.055;
 # Fixed parameters (OTHER)
-h <<- 10; g_macro_ref <<- 25; infl_forest_ref <<- 5; g_forest_ref <<- 12.5;
-p_ground <<- 0.225; g_soil_ref <<- 10; gs_max <<- 0.004; stomata_closure <<- 0.75
+h <<- 10; infl_forest_ref <<- 5; g_forest_ref <<- 12.5; g_soil_ref <<- 10;
+p_ground <<- 0.225; gs_max <<- 0.004; stomata_closure <<- 0.75; k_u <<- 0.7
 
 # Initial values (mean value from uniform parameter distributions)
-start_vals <- c(32.5, 5, 1.225, 0.7, 1.6)
+start_vals <- c(35.18, 9.92, 39.37, 2.17, 1.6) # c(32.5, 5, 25, 1.225, 1.6)
 
 
 # Bounds
-lower_bounds <- c(5, 0, 0.25, 0.2, 0.2)
-upper_bounds <- c(60, 10, 2.2, 1.2, 3)
+lower_bounds <- c(5, 0, 10, 0.25, 0.2)
+upper_bounds <- c(60, 10, 40, 2.2, 3)
 
 
 # -----------------
@@ -128,7 +130,7 @@ create_physical_constants()
 
 # Helper to set parameters
 set_params_from_vec <- function(par) {
-  infl_macro_ref <<- par[1]; infl_soil_ref <<- par[2]; k_soil <<- par[3]; k_u <<- par[4]; u_ref <<- par[5]
+  infl_macro_ref <<- par[1]; infl_soil_ref <<- par[2]; g_macro_ref <<- par[3]; k_soil <<- par[4]; u_ref <<- par[5]
 }
 
 
@@ -142,7 +144,7 @@ obs_data <- list()
 grid_base <- voxel_TLS$grid
 grid_base$density <- grid_base$density * scale_factor
 
-# 👉 gebruik start_vals als tijdelijke parameters
+# use start_vals as temporary parameters
 set_params_from_vec(start_vals)
 
 for (dt in datetimes) {
@@ -167,7 +169,7 @@ for (dt in datetimes) {
     import_rad_observations(datetime)
     import_RH_u_observations(datetime)
 
-    # run model once (met tijdelijke parameters)
+    # run model once (with temporary parameters)
     run_foredgeclim(grid_base, datetime)
   }
 

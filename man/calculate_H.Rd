@@ -7,12 +7,12 @@
 calculate_H(T_surf, T_air)
 }
 \arguments{
-\item{T_surf}{Forest surface temperature}
+\item{T_surf}{Forest surface temperature (K)}
 
-\item{T_air}{Air temperature}
+\item{T_air}{Air temperature (K)}
 }
 \value{
-H Sensible heat flux
+H Sensible heat flux (W/m2)
 }
 \description{
 Function to calculate sensible heat transfer between forest surface and air

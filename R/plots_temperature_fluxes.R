@@ -44,26 +44,9 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
   # Colors to be used in the plots
   colors = c("blue", "lightblue", "orange", "red")
 
-  # # background image
-  # img  <- png::readPNG("Output/horizontal_transect_2.png")
-  # img[,,4] <- img[,,4] * 0.3 # make transparent
-  # bg_grob <- grid::rasterGrob(img, width = unit(1, "npc"), height = unit(1, "npc"))
-
   # 2D tile plot:
   temp_surf_plot = ggplot(average_surface_temperature, aes(x = x, y = z, fill = mean_temperature)) +
     geom_tile()+
-    # annotation_custom(
-    #   grob = bg_grob,
-    #   xmin = 0, xmax = 140,
-    #   ymin = 0, ymax = 40
-    # ) +
-    # annotate("segment", x = 5, xend = 145, y = 44, yend = 44,
-    #          arrow = arrow(ends = "both", type = "closed", length = unit(0.3, "cm")),
-    #          linewidth = 1.2) +
-    # annotate("text", x = 29,  y = 40,
-    #          label = "towards forest core", size = 5) +
-    # annotate("text", x = 120, y = 40,
-    #          label = "towards forest edge", size = 5) +
     scale_fill_gradientn(
       colors = colors,
       values = rescale(c(0.25, 0.5, 0.75, 1)),
@@ -134,11 +117,6 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
   # 2D tile plot:
   temp_air_plot = ggplot(average_air_temperature, aes(x = x, y = z, fill = mean_temperature)) +
     geom_tile()+
-    # annotation_custom(
-    #   grob = bg_grob,
-    #   xmin = 0, xmax = 140,
-    #   ymin = 0, ymax = 40
-    # ) +
     scale_fill_gradientn(
       colors = colors,
       values = rescale(c(0.25, 0.5, 0.75, 1)),
@@ -215,11 +193,6 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
 
   temp_air_plot_3D = ggplot(average_air_temperature, aes(x = x, y = z, fill = mean_temperature)) +
     geom_tile()+
-    # annotation_custom(
-    #   grob = bg_grob,
-    #   xmin = 0, xmax = 140,
-    #   ymin = 0, ymax = 40
-    # ) +
     scale_fill_gradientn(
       colors = colors,
       values = rescale(c(0.25, 0.5, 0.75, 1)),
@@ -281,11 +254,6 @@ plots_temp <- function(micro_grid, T_air_vec, output_path, datetime){
 
   temp_surf_plot_3D = ggplot(average_surface_temperature, aes(x = x, y = z, fill = mean_temperature)) +
     geom_tile()+
-    # annotation_custom(
-    #   grob = bg_grob,
-    #   xmin = 0, xmax = 140,
-    #   ymin = 0, ymax = 40
-    # ) +
     scale_fill_gradientn(
       colors = colors,
       values = rescale(c(0.25, 0.5, 0.75, 1)),

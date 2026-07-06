@@ -2,10 +2,8 @@
 .Rhistory
 fast_load.R
 Changes_with_ForEdgeClimv1.0.txt
-profile.out
-Scripts/test_chunks.R
-Scripts/older_scripts/
 parameter_distributions_from_literature.xlsx
+Scripts/other_and_older_scripts/
 Data/*
 !Data/TLS_scaled_DTM_and_grid_C13_Panama.rds
 !Data/TLS_scaled_DTM_and_grid_R11_Panama.rds
@@ -18,7 +16,5 @@ Data/*
 !Data/sensor_locations_all_plots.xlsx
 !PAR_data_full-2023.rds
 Output/*
-!Output/2023-04-26_14/
-
-
-
+!Output/2023-04-26_19/C8/
+Output/2023-04-26_19/C8/*pdf

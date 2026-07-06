@@ -29,15 +29,26 @@ library(progressr)
 library(purrr)
 library(sensitivity)
 
-handlers("progress")
-
-cores <- as.numeric(Sys.getenv("PBS_NUM_PPN", unset = 1))
+cores <- 4
 plan(multicore, workers = cores)
+print(paste("Using", cores, "cores."))
 
-n <- 400
+###############################################################################
+# SCENARIO
+###############################################################################
+
+treatment <- "control" # control or removal
+season <- "dry" # dry or wet
+period <- "noon" # noon or night
+
+###############################################################################
+# SOBOL SETTINGS
+###############################################################################
+
+n <- 100
 n_boot <- 1000
 
-output_root <- "Output/sensitivity_analysis_treatments"
+output_root <- "Output/sensitivity_analysis_treatments/separate"
 
 ###############################################################################
 # PARAMETER RANGES
@@ -171,8 +182,11 @@ compute_metrics <- function(res){
     summarise(T = mean(T, na.rm = TRUE),
               .groups = "drop")
 
-  vertical_T_gradient <-
-    coef(lm(T ~ z, data = temp_profile))[2]
+  vertical_T_gradient <- mean( # average temperature change per m height (°C m^-1)
+    diff(temp_profile$T) /
+      diff(temp_profile$z),
+    na.rm = TRUE
+  )
 
   mean_understorey_SW <- mean(SW_under, na.rm = TRUE)
   sd_understorey_SW   <- sd(SW_under, na.rm = TRUE)
@@ -185,8 +199,11 @@ compute_metrics <- function(res){
     summarise(SW = mean(SW, na.rm = TRUE),
               .groups = "drop")
 
-  vertical_SW_extinction <-
-    coef(lm(log(SW) ~ z, data = sw_profile))[2]
+  vertical_SW_extinction <- mean( # average log(SW) change per m height (m^-1)
+    diff(log(sw_profile$SW)) /
+      diff(sw_profile$z),
+    na.rm = TRUE
+  )
 
   c(
     mean_understorey_T = mean_understorey_T,
@@ -302,152 +319,118 @@ scale_sobol <- function(X){
 
 scaled_input <- scale_sobol(sobol_design$X)
 
-###############################################################################
-# SCENARIOS
-###############################################################################
-
-scenarios <- expand.grid(
-  treatment = c("control","removal"),
-  season = c("dry","wet"),
-  period = c("noon","night"),
-  stringsAsFactors = FALSE
-)
-
-summary_table <- list()
 
 ###############################################################################
 # RUN SOBOL
 ###############################################################################
+summary_table <- list()
 
-for(s in seq_len(nrow(scenarios))){
+scenario_name <- paste(
+  treatment,
+  season,
+  period,
+  sep = "_"
+)
 
-  treatment <- scenarios$treatment[s]
-  season <- scenarios$season[s]
-  period <- scenarios$period[s]
+start_time <- Sys.time()
 
-  scenario_name <- paste(
-    treatment,
-    season,
-    period,
-    sep = "_"
-  )
+cat(
+  "\n====================================================\n",
+  "Starting: ", scenario_name, "\n",
+  "Start time: ", format(start_time), "\n",
+  "====================================================\n",
+  sep = ""
+)
 
-  cat("\nRunning:", scenario_name, "\n")
+datetime <- get_datetime(
+  season,
+  period
+)
 
-  datetime <- get_datetime(
-    season,
-    period
-  )
+settings <- get_treatment_settings(
+  treatment
+)
 
-  settings <- get_treatment_settings(
-    treatment
-  )
+outdir <- file.path(
+  output_root,
+  scenario_name
+)
 
-  outdir <- file.path(
-    output_root,
-    scenario_name
-  )
+dir.create(
+  outdir,
+  recursive = TRUE,
+  showWarnings = FALSE
+)
 
-  dir.create(
-    outdir,
-    recursive = TRUE,
-    showWarnings = FALSE
-  )
 
-  sobol_outputs_all <- with_progress({
+sobol_outputs_all <- future_lapply(
+  seq_len(nrow(scaled_input)),
+  function(i){
 
-    p <- progressor(
-      steps = nrow(scaled_input)
+    model_function(
+      param_values = unlist(scaled_input[i,]),
+      datetime = datetime,
+      treatment_settings = settings
     )
 
-    future_lapply(
+  },
+  future.seed = TRUE
+)
 
-      seq_len(nrow(scaled_input)),
+temperature_metrics <- c(
+  "mean_understorey_T",
+  "sd_understorey_T",
+  "vertical_T_gradient"
+)
 
-      function(i){
+sw_metrics <- c(
+  "mean_understorey_SW",
+  "sd_understorey_SW",
+  "vertical_SW_extinction"
+)
 
-        metrics <- model_function(
+if(period == "night"){
 
-          param_values =
-            unlist(scaled_input[i,]),
+  metric_names <- temperature_metrics
 
-          datetime = datetime,
+}else{
 
-          treatment_settings =
-            settings
-        )
-
-        p()
-
-        metrics
-      },
-
-      future.seed = TRUE
-    )
-  })
-
-  metric_names <- names(
-    sobol_outputs_all[[1]]
+  metric_names <- c(
+    temperature_metrics,
+    sw_metrics
   )
 
-  temperature_metrics <- c(
-    "mean_understorey_T",
-    "sd_understorey_T",
-    "vertical_T_gradient"
+}
+
+for(metric in metric_names){
+
+  y <- map_dbl(
+    sobol_outputs_all,
+    metric
   )
 
-  sw_metrics <- c(
-    "mean_understorey_SW",
-    "sd_understorey_SW",
-    "vertical_SW_extinction"
+  sobol_res <- tell(
+    sobol_design,
+    y
   )
 
-  if(period == "night"){
-
-    metric_names <- intersect(
-      metric_names,
-      temperature_metrics
+  saveRDS(
+    sobol_res,
+    file.path(
+      outdir,
+      paste0(metric, ".rds")
     )
+  )
 
-  }else{
+  tmp <- data.frame(
+    scenario = scenario_name,
+    metric = metric,
+    parameter = rownames(sobol_res$S),
+    S1 = sobol_res$S$original,
+    ST = sobol_res$T$original
+  )
 
-    metric_names <- c(
-      temperature_metrics,
-      sw_metrics
-    )
-
-  }
-
-  for(metric in metric_names){
-
-    y <- map_dbl(
-      sobol_outputs_all,
-      metric
-    )
-
-    sobol_res <- tell(
-      sobol_design,
-      y
-    )
-
-    saveRDS(
-      sobol_res,
-      file.path(
-        outdir,
-        paste0(metric, ".rds")
-      )
-    )
-
-    tmp <- data.frame(
-      scenario = scenario_name,
-      metric = metric,
-      parameter = rownames(sobol_res$S),
-      S1 = sobol_res$S$original,
-      ST = sobol_res$T$original
-    )
-
-    summary_table[[length(summary_table)+1]] <- tmp
-  }
+  summary_table[[length(summary_table)+1]] <- tmp
 }
 
 ###############################################################################
@@ -461,7 +444,7 @@ summary_table <- bind_rows(
 saveRDS(
   summary_table,
   file.path(
-    output_root,
+    outdir,
     "sobol_summary_table.rds"
   )
 )
@@ -469,7 +452,7 @@ saveRDS(
 write.csv(
   summary_table,
   file.path(
-    output_root,
+    outdir,
     "sobol_summary_table.csv"
   ),
   row.names = FALSE
@@ -477,4 +460,19 @@ write.csv(
 
 plan(sequential)
 
-cat("\nFinished.\n")
+end_time <- Sys.time()
+
+runtime <- difftime(
+  end_time,
+  start_time,
+  units = "mins"
+)
+
+cat(
+  "\n====================================================\n",
+  "Finished: ", scenario_name, "\n",
+  "End time: ", format(end_time), "\n",
+  "Runtime: ", round(as.numeric(runtime), 2), " minutes\n",
+  "====================================================\n",
+  sep = ""
+)

@@ -8,12 +8,12 @@ In this function, air temperature is updated and ready to use for the sensible h
 calculate_D(temp_air, temp_soil)
 }
 \arguments{
-\item{temp_air}{Air temperature}
+\item{temp_air}{Air temperature (K)}
 
-\item{temp_soil}{Ground surface temperature}
+\item{temp_soil}{Ground surface temperature (W/m2)}
 }
 \value{
-total_diffusion Diffusion flux per voxel
+total_diffusion Diffusion flux per voxel (W/m2)
 }
 \description{
 Function to simulate air to air diffusion via Fourier's law of heat conduction. This is done in 3D.
