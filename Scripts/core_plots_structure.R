@@ -1,6 +1,29 @@
+###############################################################################
+# Forest structural profile figure
+#
+# Creates vertical forest structural profiles for the four intensively
+# monitored plots in Panama (C8, C13, R7, and R11) from 1-m TLS-derived
+# structural grids. Voxel density is averaged along the northing (Y) direction
+# to obtain an X-Z cross-sectional representation of forest structure.
+# A smoothed canopy-height profile is overlaid on each structural profile.
+# The four plots are combined into a single figure with a shared density scale.
+#
+# Author: Emma Van de Walle - Q-ForestLab
+###############################################################################
+
+# ------------------------------------------------------------
+# Load packages
+# ------------------------------------------------------------
+
 library(patchwork)
 library(dplyr)
+library(tidyr)
 library(ggplot2)
+library(cowplot)
+
+# ------------------------------------------------------------
+# Function to create a vertical forest structural profile
+# ------------------------------------------------------------
 
 create_structure_plot <- function(grid,
                                   site_name,
@@ -23,7 +46,21 @@ create_structure_plot <- function(grid,
     ifelse(
       average_density$mean_density == 0,
       NA,
-      average_density$mean_density^2
+      average_density$mean_density
+    )
+
+  # Determine canopy surface (highest voxel containing vegetation)
+  canopy_line <- average_density %>%
+    filter(!is.na(plot_density)) %>%
+    group_by(X) %>%
+    summarise(
+      canopy_height = max(Z),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      canopy_height = zoo::rollmean(canopy_height,
+                                    k = 6,
+                                    fill = "extend")
     )
 
   p <- ggplot(
@@ -31,24 +68,18 @@ create_structure_plot <- function(grid,
     aes(X, Z, fill = plot_density)
   ) +
     geom_tile() +
-    # scale_fill_gradient(
-    #   low = "lightgreen",
-    #   high = "darkgreen",
-    #   limits = c(0, 1),
-    #   trans = "sqrt",
-    #   na.value = "#CFE8FF",
-    #   name = "Normalised\ndensity",
-    #   guide = guide_colorbar(
-    #     barwidth = 1,
-    #     barheight = 12,
-    #     frame.colour = "black",
-    #     ticks.colour = "black"
-    #   )
-    # ) +
+    geom_line(
+      data = canopy_line,
+      aes(x = X, y = canopy_height),
+      inherit.aes = FALSE,
+      colour = "black",
+      linewidth = 0.8,
+      lineend = "round"
+    ) +
     scale_fill_viridis_c(
       option = "viridis",
       direction = -1,
-      trans = "sqrt",
+      #trans = "sqrt",
       limits = c(0, 1),
       na.value = "#CFE8FF",
       name = "Normalised\ndensity",
@@ -123,10 +154,18 @@ create_structure_plot <- function(grid,
   p
 }
 
+# ------------------------------------------------------------
+# Load TLS-derived structural grids
+# ------------------------------------------------------------
+
 tls_C8  <- readRDS("Data/TLS_scaled_DTM_and_grid_C8_Panama.rds")
 tls_C13 <- readRDS("Data/TLS_scaled_DTM_and_grid_C13_Panama.rds")
 tls_R7  <- readRDS("Data/TLS_scaled_DTM_and_grid_R7_Panama.rds")
 tls_R11 <- readRDS("Data/TLS_scaled_DTM_and_grid_R11_Panama.rds")
+
+# ------------------------------------------------------------
+# Create vertical forest structural profiles
+# ------------------------------------------------------------
 
 p1 <- create_structure_plot(
   tls_C8$grid,
@@ -152,14 +191,16 @@ p4 <- create_structure_plot(
   show_x = TRUE
 )
 
+# ------------------------------------------------------------
+# Combine the four structural profiles
+# ------------------------------------------------------------
 
 final_plot <-
   (p1 + p2) /
   (p3 + p4) +
   plot_layout(guides = "collect") +
   plot_annotation(
-    title =
-      "Forest structural profiles of liana-present control plots (C) \nand liana-removal plots (R) in Panama.",
+    title = NULL, #"Forest structural profiles of liana-present control plots (C) \nand liana-removal plots (R) in Panama."
     theme = theme(
       plot.title = element_text(
         size = 24,
@@ -175,25 +216,35 @@ final_plot <-
     )
   )
 
-library(cowplot)
+# ------------------------------------------------------------
+# Add common x- and y-axis titles
+# ------------------------------------------------------------
 
 final_plot_axes <- ggdraw() +
   draw_plot(final_plot) +
   draw_label(
     "Height (m)",
-    x = 0.03,
+    x = 0.012,
     y = 0.5,
     angle = 90,
     size = 22
   ) +
   draw_label(
     "Easting (m)",
-    x = 0.5,
+    x = 0.46,
     y = 0.04,
     size = 22
   )
 
+# ------------------------------------------------------------
+# Display figure
+# ------------------------------------------------------------
+
 final_plot_axes
+
+# ------------------------------------------------------------
+# Save figure
+# ------------------------------------------------------------
 
 ggsave(
   "Output/Figure_forest_structure.png",

@@ -1,3 +1,25 @@
+################################################################################
+# ForEdgeClim - Selection of representative PAR calibration days
+#
+# Selects four contrasting days in 2023 for PAR calibration based on
+# meteorological conditions, while requiring sufficient PAR observations in
+# both C8 and R7.
+#
+# Candidate days are required to have:
+#   - at least 20 hourly air-temperature observations;
+#   - at least 12 hourly PAR records with >=10 observations per hour in both
+#     C8 and R7.
+#
+# Four non-overlapping calibration days are selected to represent:
+#   1. high and variable shortwave radiation;
+#   2. high diffuse-radiation fraction and relative humidity;
+#   3. high wind speed;
+#   4. a large daytime-nighttime air-temperature difference.
+#
+# Author: Emma Van de Walle - Q-ForestLab
+################################################################################
+
+
 start_analysis <- Sys.time()
 
 library(dplyr)

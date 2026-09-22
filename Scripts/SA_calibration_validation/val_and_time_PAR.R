@@ -1,8 +1,25 @@
-############################################################################################
-# Combined script: ForEdgeClim timeseries + validation + txtProgressBar for shortwave radiation modelling
+################################################################################
+# ForEdgeClim annual simulation and shortwave-radiation validation
 #
-# Author: Emma Van de Walle - Q-ForestLab
-############################################################################################
+# Runs ForEdgeClim for one forest plot for every hourly timestep of 2023 using
+# the calibrated shortwave-radiation parameters.
+#
+# For each timestep, the script:
+#   - runs ForEdgeClim using the plot-specific TLS forest structure;
+#   - extracts mean microclimate and energy-balance variables at 1 m height
+#     (Tair, Tsurf, LE, RH, VPD, and direct/diffuse shortwave radiation);
+#   - matches simulated air temperature to TOMST sensor locations;
+#   - matches simulated PAR to PAR sensor locations when observations are
+#     available;
+#   - stores the resulting annual model timeseries.
+#
+# Shortwave-radiation performance is evaluated using daily median PAR per
+# sensor, retaining sensor-days with at least 8 valid hourly observations.
+# Temporal Pearson and Spearman correlations are calculated per sensor and
+# spatial Pearson and Spearman correlations per day.
+#
+# Author: Emma Van de Walle – Q-ForestLab
+################################################################################
 
 # ---- Packages ----
 suppressPackageStartupMessages({
@@ -44,7 +61,7 @@ params = list(
   omega = 0.5266289, Kb_v = 0.5058042,
 
   # fixed values:
-  beta0 = 0.325, betad = 0.325, omega = 0.52,
+  beta0 = 0.325, betad = 0.325,
   omega_g_v = 0.13, Kd_v = 0.775,
 
   e_forest = 0.965, beta_lw = 0.325, omega_lw = 0.035,

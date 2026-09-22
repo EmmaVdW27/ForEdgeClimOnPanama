@@ -1,6 +1,14 @@
 ############################################################################################
-# This script validates ForEdgeClim's model output (with calibrated & uncalibrated parameter sets)
-# against observational TOMST TMS-4 sensors.
+# ForEdgeClim air-temperature validation visualisation
+#
+# Compares air-temperature validation performance between calibrated and
+# uncalibrated ForEdgeClim simulations for one forest plot using TOMST TMS-4
+# observations.
+#
+# Validation statistics (ME, residual SD, RMSE, R2, and NSE) are calculated
+# across all available hourly sensor observations for each parameterisation.
+# The script visualises modelled versus observed air temperature and the
+# distribution of residuals by hour of day.
 #
 # Author: Emma Van de Walle - Q-ForestLab
 ############################################################################################

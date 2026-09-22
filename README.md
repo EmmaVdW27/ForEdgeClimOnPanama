@@ -22,7 +22,7 @@ devtools::install_github("EmmaVdW27/ForEdgeClimOnPanama")
 An example demonstrating how to run **ForEdgeClimOnPanama** is provided in:
 
 ```text
-testing_foredgeclim.R
+Scripts/testing_foredgeclim.R
 ```
 
 

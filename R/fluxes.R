@@ -107,11 +107,12 @@ saturated_vapor_pressure <- function(temp) {
 #' @param net_rad  Net radiation (W/m2)
 #' @param G        Ground heat flux (W/m2)
 #' @return LE      Latent heat flux (W/m2)
+#' @export
 #'
 calculate_LE_PM_C <- function(T_surf_C, T_air_C, SW_down, net_rad, G) {
 
   # aerodynamic conductance
-  ga <- g_forest#/Cp/rho
+  ga <- g_forest/Cp/rho
 
   # --- 1. absolute vapour pressure from macro conditions ---
   ea <- saturated_vapor_pressure(macro_temp - 273.15) * (RH / 100)

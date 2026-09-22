@@ -1,9 +1,26 @@
-############################################################################################
-# This script optimizes ForEdgeClim temperature parameters for the whole year with the CMA-ES algorithm (via cmaesr).
-# In the objective function, we minimize RMSE (Root Mean Square Error).
+################################################################################
+# ForEdgeClim air-temperature calibration – CMA-ES
 #
-# Author: Emma Van de Walle - Q-ForestLab
-############################################################################################
+# Calibrates five microclimate parameters (infl_macro_ref, infl_soil_ref,
+# g_macro_ref, k_soil, and u_ref) for one forest plot using TOMST air-temperature
+# observations from four selected calibration days.
+#
+# For each candidate parameter set, the script:
+#   - runs ForEdgeClim for all 24 hours of each calibration day;
+#   - extracts simulated air temperature at 1 m height;
+#   - matches simulated temperatures to TOMST sensor locations using
+#     nearest-neighbour matching;
+#   - evaluates agreement between observed and simulated air temperatures.
+#
+# CMA-ES minimises the RMSE across all available sensor observations and
+# timesteps. For the best parameter set, RMSE, R2, NSE, mean error (ME),
+# and residual standard deviation (SD) are calculated.
+#
+# Shortwave-radiation parameters (omega and Kb_v) are fixed at values obtained
+# from the preceding shortwave-radiation calibration.
+#
+# Author: Emma Van de Walle – Q-ForestLab
+################################################################################
 
 # ---- Packages ----
 suppressPackageStartupMessages({
@@ -98,7 +115,7 @@ if(plotnr == "C13"){
 # PARAMETER NAMES & DEFAULTS
 # -----------------
 # Key parameters
-param_names <- c("infl_macro_ref", "infl_soil_ref", "g_macro_ref ", "k_soil", "u_ref")
+param_names <- c("infl_macro_ref", "infl_soil_ref", "g_macro_ref", "k_soil", "u_ref")
 # SW calibrated parameters from SW calibration
 omega <<- 0.5266289; Kb_v <<- 0.5058042;
 # Fixed parameters (SW RTM)
@@ -458,7 +475,7 @@ get_spreads <- function(M) {
   sds <- apply(M, 2, stats::sd) # get sd for each param (= each column)
   # Covariance matrix representing the multivariate spread (including correlations between params)
   # The eigenvalues of this matrix are the variances along the main axes (principal components, PC).
-  # The diagonal of a covariance matrix contains the variance of 1 param, the other elements the correlations between 2 params.
+  # The diagonal of a covariance matrix contains the variance of each parameter; the off-diagonal elements contain covariances between parameters.
   # CMA-ES learns correlations between parameters: the algorithm eg detects improvements when changing combinations of parameters,
   # then the matrix is adapted, meaning the search directions (= PCs) are updated. Main search is in the direction of the main PC,
   # since it has the highest eigenvalue.

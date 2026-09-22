@@ -15,7 +15,7 @@ start_script = Sys.time()
 #########
 # INPUT #
 #########
-plotnr <- "C8" # C13,  R11, R7 or C8
+plotnr <- "R11" # C13, R11, R7, C8, R5, R14, C12 or C16
 
 start_time <- as.POSIXct("2023-04-26 19:00:00", tz = "UTC") # first hour you want to run the model for
 end_time <- start_time   # last hour you want to run the model for
@@ -41,11 +41,31 @@ if(plotnr == "C13"){
   height_canopy = 38
   TLS_input_file <- 'Data/Data_Kasper/plot08_trimmed_5cm.las'
   TLS_filtered_file <- 'Data/TLS_scaled_DTM_and_grid_C8_Panama.rds'
-} else { # plotnr == "R7"
+} else if(plotnr == "R7"){
   plot_map = "R7"
   height_canopy = 37
   TLS_input_file <- 'Data/Data_Kasper/plot07_trimmed_5cm.las'
   TLS_filtered_file <- 'Data/TLS_scaled_DTM_and_grid_R7_Panama.rds'
+} else if(plotnr == "R5"){
+  plot_map = "R5"
+  height_canopy = 36
+  TLS_input_file <- 'Data/Data_Kasper/plot05_trimmed_5cm.las'
+  TLS_filtered_file <- 'Data/TLS_scaled_DTM_and_grid_R5_Panama.rds'
+} else if(plotnr == "R14"){
+  plot_map = "R14"
+  height_canopy = 42
+  TLS_input_file <- 'Data/Data_Kasper/plot14_trimmed_5cm.las'
+  TLS_filtered_file <- 'Data/TLS_scaled_DTM_and_grid_R14_Panama.rds'
+} else if(plotnr == "C12"){
+  plot_map = "C12"
+  height_canopy = 29
+  TLS_input_file <- 'Data/Data_Kasper/plot12_trimmed_5cm.las'
+  TLS_filtered_file <- 'Data/TLS_scaled_DTM_and_grid_C12_Panama.rds'
+} else {
+  plot_map = "C16"
+  height_canopy = 30
+  TLS_input_file <- 'Data/Data_Kasper/plot16_trimmed_5cm.las'
+  TLS_filtered_file <- 'Data/TLS_scaled_DTM_and_grid_C16_Panama.rds'
 }
 
 for (current_datetime in datetime_series) {

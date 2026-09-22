@@ -1,4 +1,4 @@
-#' Function to calculate the derivative of the energy balance closure error to surface temperature
+#' Function to calculate the derivative of the energy balance closure error to surface temperature with Priestley-Taylor approximation.
 #'
 #' @param temp Forest surface temperature
 #' @param net_rad Net radiation
@@ -22,48 +22,130 @@ de_dT <- function(temp, net_rad){
 
 }
 
-
-#' Function to calculate the derivative of the energy balance closure error to surface temperature with PM LE
+#' Derivative of the surface energy-balance residual with respect to
+#' surface temperature using Penman-Monteith latent heat flux
 #'
-#' @param temp Forest surface temperature (K)
-#' @param T_air_K Air temperature in Kelvin (K)
+#' @param temp Surface temperature (K)
+#' @param SW_down Downward shortwave radiation (W/m2)
 #' @param net_rad Net radiation (W/m2)
 #' @param G Ground heat flux (W/m2)
-#' @param gamma_eff effective psychrometric constant (kPa/K)
-#' @return Derivative of energy balance wrt surface temperature
-de_dT_PM <- function(temp, T_air_K, net_rad, G, gamma_eff) {
-  # 1. conversion to Celsius for s-calculation
-  T_c = temp - 273.15
-  T_air_c = T_air_K - 273.15
+#' @return Derivative of the energy-balance residual with respect to
+#'   surface temperature
+#'
+de_dT_PM <- function(temp, SW_down, net_rad, G) {
 
-  # 2. derivative of radiation and sensible heat
-  dR_dT = -4 * e_forest * sigma_SB * temp^3
-  dH_dT = den * g_forest
+  # Surface temperature in degrees Celsius
+  T_c <- temp - 273.15
 
-  # 3. saturation vapour pressure and derivative
-  # es is the saturation vapour pressure at surface temperature
-  es = 0.6108 * exp(17.27 * T_c / (T_c + 237.3))
-  s = 4098 * es / (T_c + 237.3)^2
+  # ------------------------------------------------------------------
+  # Radiation and sensible heat
+  # ------------------------------------------------------------------
 
-  # 4. actual vapour pressure of air
-  # ea is constant with respect to the surface temperature
-  ea = 0.6108 * exp(17.27 * T_air_c / (T_air_c + 237.3)) * (RH / 100)
+  # dRn / dTsurf
+  dR_dT <- -4 * e_forest * sigma_SB * temp^3
 
-  # 5. second derivative of vapour pressure
-  ds_dT = s * (17.27 / (T_c + 237.3) - (17.27 * T_c) / (T_c + 237.3)^2 - 2 / (T_c + 237.3))
+  # dH / dTsurf, with Tair fixed during the Newton step
+  dH_dT <- den * g_forest
 
-  # 6. Penman-Monteith quotient rule: (f'g - fg') / g^2
-  Noemer = s + gamma_eff
-  dNoemer_dT = ds_dT
 
-  VPD_term = rho * Cp * g_forest * (es - ea)
-  Teller = s * (net_rad - G) + VPD_term
-  dTeller_dT = (ds_dT * (net_rad - G) + s * dR_dT) + (rho * Cp * g_forest * s)
+  # ------------------------------------------------------------------
+  # Saturation vapour pressure
+  # ------------------------------------------------------------------
 
-  dLE_dT = den * ((dTeller_dT * Noemer) - (Teller * dNoemer_dT)) / (Noemer^2)
+  es <- saturated_vapor_pressure(T_c)
 
-  # 7. total derivative of energy balance error
-  return(dR_dT - dH_dT - dLE_dT)
+  # des/dT = slope of saturation vapour pressure curve
+  s <- 4098 * es / (T_c + 237.3)^2
+
+  # ds/dT = d²es/dT²
+  ds_dT <- s * (
+    17.27 * 237.3 / (T_c + 237.3)^2 -
+      2 / (T_c + 237.3)
+  )
+
+
+  # ------------------------------------------------------------------
+  # Vapour pressure deficit
+  # ------------------------------------------------------------------
+
+  ea <- saturated_vapor_pressure(macro_temp - 273.15) * (RH / 100)
+
+  VPD <- pmax(0, es - ea)
+
+  dVPD_dT <- ifelse(VPD > 0, s, 0)
+
+
+  # ------------------------------------------------------------------
+  # Stomatal conductance
+  # ------------------------------------------------------------------
+
+  PAR <- 0.45 * 4.57 * SW_down
+
+  f_light <- PAR / (PAR + 100)
+  f_vpd   <- exp(-stomata_closure * VPD)
+
+  gs_raw <- gs_max * f_light * f_vpd
+  gs_eff <- pmax(0.0001, gs_raw)
+
+  # Derivative is zero when gs is limited by its imposed minimum
+  dgs_dT <- ifelse(
+    VPD > 0 & gs_raw > 0.0001,
+    -stomata_closure * gs_eff * s,
+    0
+  )
+
+
+  # ------------------------------------------------------------------
+  # Effective psychrometric constant
+  # ------------------------------------------------------------------
+
+  ga <- g_forest / (rho * Cp)
+
+  gamma_eff <- gamma_psy * (1 + ga / gs_eff)
+
+  dgamma_eff_dT <-
+    -gamma_psy * ga / gs_eff^2 * dgs_dT
+
+
+  # ------------------------------------------------------------------
+  # Penman-Monteith
+  # ------------------------------------------------------------------
+
+  numerator <-
+    s * (net_rad - G) +
+    rho * Cp * ga * VPD
+
+  denominator <- s + gamma_eff
+
+  # d numerator / dT
+  #
+  # net_rad changes with surface temperature;
+  # G is treated as fixed within one Newton step.
+  dnumerator_dT <-
+    ds_dT * (net_rad - G) +
+    s * dR_dT +
+    rho * Cp * ga * dVPD_dT
+
+  # d denominator / dT
+  ddenominator_dT <-
+    ds_dT + dgamma_eff_dT
+
+  # Quotient rule
+  dLE_dT <- den * (
+    dnumerator_dT * denominator -
+      numerator * ddenominator_dT
+  ) / denominator^2
+
+
+  # ------------------------------------------------------------------
+  # Energy-balance residual
+  #
+  # E = Rn - H - LE
+  # ------------------------------------------------------------------
+
+  dE_dT <- dR_dT - dH_dT - dLE_dT
+
+  return(dE_dT)
 }
 
 

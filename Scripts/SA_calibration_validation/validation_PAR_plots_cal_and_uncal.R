@@ -1,6 +1,12 @@
 ############################################################################################
-# This script validates ForEdgeClim's model output (with calibrated & uncalibrated parameter sets)
-# against observational PAR sensors.
+# ForEdgeClim shortwave-radiation validation visualisation
+#
+# Compares shortwave-radiation validation performance between calibrated and
+# uncalibrated ForEdgeClim simulations for one forest plot.
+#
+# The script visualises temporal Pearson and Spearman correlations across PAR
+# sensors and spatial Pearson and Spearman correlations across days. Median
+# correlations are calculated and reported for each model parameterisation.
 #
 # Author: Emma Van de Walle - Q-ForestLab
 ############################################################################################

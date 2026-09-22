@@ -1,22 +1,22 @@
 ###############################################################################
-# VISUALISATION OF SOBOL SENSITIVITY ANALYSIS
+# ForEdgeClim - Visualisation of Sobol sensitivity analysis
 #
-# Treatments:
-#   control / removal
+# Processes and visualises total-order Sobol sensitivity indices for control
+# and liana-removal treatments under dry- and wet-season daytime and nighttime
+# scenarios.
 #
-# Seasons:
-#   dry / wet
+# Total-order indices are truncated at zero and normalised within each
+# treatment x season x period x metric combination. Parameters are ranked by
+# their mean normalised total-order sensitivity, and the smallest common set
+# explaining at least 50% of the normalised sensitivity in every corresponding
+# scenario is retained separately for temperature and shortwave metrics.
+# Remaining parameters are grouped as "Other parameters".
 #
-# Periods:
-#   noon / night
+# The script creates a stacked bar plot of normalised total-order Sobol indices
+# and calculates treatment differences and sensitivity coverage of the retained
+# parameters.
 #
-# Metrics:
-#   mean_understorey_T
-#   sd_understorey_T
-#   vertical_T_gradient
-#   mean_understorey_SW
-#   sd_understorey_SW
-#   vertical_SW_extinction
+# Author: Emma Van de Walle - Q-ForestLab
 ###############################################################################
 
 library(dplyr)
@@ -835,6 +835,74 @@ saveRDS(
     "sobol_master_dataframe.rds"
   )
 )
+
+###############################################################################
+# CREATE TABLE WITH MEAN ABSOLUTE DELTA (CONTROL - REMOVAL) OVER ALL SCENARIOS
+###############################################################################
+
+delta_table <- sobol_df %>%
+  select(treatment, metric, season, period, parameter, ST_norm) %>%
+  pivot_wider(
+    names_from = treatment,
+    values_from = ST_norm
+  ) %>%
+  mutate(
+    delta = control - removal
+  ) %>%
+  group_by(parameter) %>%
+  summarise(
+    Mean_Abs_Delta = mean(abs(delta), na.rm = TRUE),
+    .groups = "drop"
+  )%>%
+  arrange(desc(Mean_Abs_Delta))
+
+print(delta_table, n = 24)
+
+
+###############################################################################
+# median and emperical ranges on top parameters
+###############################################################################
+
+# Seven key parameters across temperature and shortwave metrics
+top_7_parameters <- union(
+  temp_top_parameters,
+  sw_top_parameters
+)
+
+# Variance explained by these parameters in each scenario
+top7_coverage <- sobol_df %>%
+
+  filter(
+    metric %in% c(temperature_metrics, sw_metrics)
+  ) %>%
+
+  group_by(
+    treatment,
+    season,
+    period,
+    metric
+  ) %>%
+
+  summarise(
+    coverage = sum(
+      ST_norm[parameter %in% top_7_parameters],
+      na.rm = TRUE
+    ),
+    .groups = "drop"
+  )
+
+# Summary across all scenarios
+top7_summary <- top7_coverage %>%
+  summarise(
+    mean = mean(coverage),
+    median = median(coverage),
+    CI95_low = quantile(coverage, 0.025),
+    CI95_high = quantile(coverage, 0.975),
+    min = min(coverage),
+    max = max(coverage)
+  )
+
+print(top7_summary)
 
 ###############################################################################
 # FINISHED

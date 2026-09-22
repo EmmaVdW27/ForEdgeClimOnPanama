@@ -1,24 +1,32 @@
-
-###############################################################################
-# Sobol sensitivity analysis for ForEdgeClim
-# Treatments:
-#   control = C8 + C13
-#   removal = R7 + R11
+################################################################################
+# ForEdgeClim global sensitivity analysis – Sobol-Jansen method
 #
-# Seasons:
-#   dry, wet
+# Quantifies the sensitivity of simulated air temperature and shortwave
+# radiation to 24 ForEdgeClim parameters using variance-based Sobol indices.
 #
-# Periods:
-#   noon, night
+# The analysis is performed separately for liana-present control plots
+# (C8 and C13) and liana-removal plots (R7 and R11), for representative
+# dry- and wet-season daytime and nighttime conditions.
 #
-# QoI:
-#   1. mean_understorey_T
-#   2. sd_understorey_T
-#   3. vertical_T_gradient
-#   4. mean_understorey_SW
-#   5. sd_understorey_SW
-#   6. vertical_SW_extinction
-###############################################################################
+# For each parameter set, ForEdgeClim is run for both plots within a treatment,
+# after which the simulated metrics are averaged across plots.
+#
+# Quantities of interest:
+#   - mean understorey air temperature at 1 m;
+#   - spatial SD of understorey air temperature at 1 m;
+#   - vertical air-temperature gradient;
+#   - mean understorey shortwave radiation at 1 m;
+#   - spatial SD of understorey shortwave radiation at 1 m;
+#   - vertical shortwave-radiation extinction.
+#
+# Sobol first-order (S1) and total-order (ST) sensitivity indices are estimated
+# using the Jansen estimator. Bootstrap resampling (n = 1000) is used to
+# quantify uncertainty in the sensitivity indices.
+#
+# Shortwave-radiation metrics are evaluated for daytime scenarios only.
+#
+# Author: Emma Van de Walle – Q-ForestLab
+################################################################################
 
 library(ForEdgeClimOnPanama)
 library(dplyr)

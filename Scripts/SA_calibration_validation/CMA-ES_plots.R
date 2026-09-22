@@ -1,5 +1,13 @@
 ############################################################################################
-# This script visualizes the parameter optimization process, using the CMA-ES algorithm (cmaesr).
+# ForEdgeClim calibration - CMA-ES convergence visualisation
+#
+# Visualises the CMA-ES optimisation process for a ForEdgeClim calibration.
+#
+# The script creates:
+#   1. the objective value (correlation-based objective or RMSE) of all offspring
+#      across generations, highlighting the best offspring per generation;
+#   2. the distribution of offspring parameter sets in PCA space for each
+#      generation.
 #
 # Author: Emma Van de Walle - Q-ForestLab
 ############################################################################################

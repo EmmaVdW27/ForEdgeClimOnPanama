@@ -92,7 +92,7 @@ create_model_parameters <- function() {
 
 
   # PM LE parameters
-  gs_max <<- 0.004  # maximal stomatal conductance (mol/m2/s)
+  gs_max <<- 0.004  # maximal stomatal conductance (m/s)
   stomata_closure <<- 0.75 # stomatal closure parameter that controls the sensitivity of stomatal conductance to increasing VPD (dimensionless)
 
   # g(u) parameters

@@ -1,8 +1,23 @@
-############################################################################################
-# Combined script: ForEdgeClim timeseries + validation + txtProgressBar for temperature modelling
+################################################################################
+# ForEdgeClim annual simulation and air-temperature validation
 #
-# Author: Emma Van de Walle - Q-ForestLab
-############################################################################################
+# Runs ForEdgeClim for one forest plot for every hourly timestep of 2023 using
+# the calibrated shortwave-radiation and microclimate parameter sets.
+#
+# For each timestep, the script:
+#   - runs ForEdgeClim using the plot-specific TLS forest structure;
+#   - extracts mean microclimate and energy-balance variables at 1 m height
+#     (Tair, Tsurf, LE, RH, VPD, and direct/diffuse shortwave radiation);
+#   - matches simulated air temperature to TOMST sensor locations using
+#     nearest-neighbour matching;
+#   - stores the resulting annual model timeseries.
+#
+# Air-temperature performance is evaluated across all available hourly TOMST
+# observations using mean error (ME), residual standard deviation (SD), RMSE,
+# R2, and Nash-Sutcliffe efficiency (NSE).
+#
+# Author: Emma Van de Walle – Q-ForestLab
+################################################################################
 
 # ---- Packages ----
 suppressPackageStartupMessages({
@@ -33,7 +48,7 @@ start_analysis <- Sys.time()
 # INPUT
 # -----------------
 
-plotnr = "C13" # C13 or R11
+plotnr = "C13" # C8, C13, R7, or R11
 season_string = "C13_calibrated"
 
 params = list(

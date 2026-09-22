@@ -1,9 +1,25 @@
-############################################################################################
-# This script optimizes ForEdgeClim shortwave radiation parameters for the whole year with the CMA-ES algorithm (via cmaesr).
-# In the objective function, we minimize RMSE (Root Mean Square Error).
+################################################################################
+# ForEdgeClim shortwave-radiation calibration – CMA-ES
 #
-# Author: Emma Van de Walle - Q-ForestLab
-############################################################################################
+# Calibrates the shortwave-radiation parameters omega and Kb_v for one forest
+# plot using PAR observations from four selected calibration days.
+#
+# For each candidate parameter set, the script:
+#   - runs ForEdgeClim for daytime hours (11–22 UTC);
+#   - extracts simulated shortwave radiation at 1 m height;
+#   - matches simulated values to PAR sensor locations;
+#   - aggregates observations and simulations to daily medians per sensor;
+#   - evaluates temporal and spatial Pearson and Spearman correlations.
+#
+# CMA-ES minimises the objective:
+#   4 - (temporal Pearson + temporal Spearman +
+#        spatial Pearson + spatial Spearman)
+#
+# The optimisation therefore gives equal weight to temporal and spatial
+# agreement in both absolute correlation and rank correlation.
+#
+# Author: Emma Van de Walle – Q-ForestLab
+################################################################################
 
 # ---- Packages ----
 suppressPackageStartupMessages({
@@ -191,7 +207,7 @@ for (dt in datetimes) {
 
 cat("PAR data preloaded in memory.\n")
 
-# evaluator that does everything (RMSE, R2, ME, NSE and SD)
+# evaluator that does everything
 evaluate_par <- function(par) {
 
   parts <- future_lapply(
@@ -450,7 +466,7 @@ compute_objective <- function(par) {
 }
 
 # -----------------
-# EXTRA METRICS: RMSE, R2, NSE, ME, SD
+# EXTRA METRICS
 # -----------------
 compute_metrics <- function(par) {
   evaluate_par(par)$metrics
@@ -490,7 +506,7 @@ obj_logged <- smoof::makeSingleObjectiveFunction(
   fn   = function(x) wrapped_obj_fn(x), # function to be optimized
   has.simple.signature = TRUE, # fn accepts a simple vector as input, not a list
   par.set = ParamHelpers::makeNumericParamSet(len = dim_par, lower = lower_bounds, upper = upper_bounds), # number of params and search space (lower/upper bounds)
-  minimize = TRUE # minimize RMSE, direction of optimalization
+  minimize = TRUE # minimise the correlation-based objective
 )
 
 
@@ -540,7 +556,6 @@ if ("getDefaultStoppingConditions" %in% getNamespaceExports("cmaesr")) {
   stop_list <- c(stop_list, cmaesr::getDefaultStoppingConditions())
 }
 # Target fitness as additional criterion if supported
-# Stop if best RMSE =< stop_fitness
 if ("stopOnOptFitness" %in% getNamespaceExports("cmaesr")) {
   stop_list <- c(stop_list, list(cmaesr::stopOnOptFitness(stop_fitness)))
 }
@@ -572,7 +587,7 @@ get_spreads <- function(M) {
   sds <- apply(M, 2, stats::sd) # get sd for each param (= each column)
   # Covariance matrix representing the multivariate spread (including correlations between params)
   # The eigenvalues of this matrix are the variances along the main axes (principal components, PC).
-  # The diagonal of a covariance matrix contains the variance of 1 param, the other elements the correlations between 2 params.
+  # The diagonal of a covariance matrix contains the variance of each parameter; the off-diagonal elements contain covariances between parameters.
   # CMA-ES learns correlations between parameters: the algorithm eg detects improvements when changing combinations of parameters,
   # then the matrix is adapted, meaning the search directions (= PCs) are updated. Main search is in the direction of the main PC,
   # since it has the highest eigenvalue.
@@ -591,7 +606,7 @@ param_mat_cols <- param_names
 generation_log <- offspring_log %>%
   dplyr::group_by(iter) %>%
   dplyr::summarise(
-    best_value = min(objective, na.rm = TRUE), # get lowest RMSE within each generation
+    best_value = min(objective, na.rm = TRUE), # # get lowest objective value within each generation
     params = list(as.matrix(dplyr::pick(dplyr::all_of(param_mat_cols)))), # make a list with for every generation a lambda x d matrix with paramvalues
     .groups = "drop"
   ) %>%
@@ -618,10 +633,10 @@ generation_log <- offspring_log %>%
 readr::write_csv(offspring_log, logfile_offspring)
 readr::write_csv(generation_log, logfile_gener)
 
-# ---- Search best offspring based on RMSE ----
+# ---- Search best offspring ----
 best_offspring <- offspring_log %>%
   dplyr::filter(is.finite(objective)) %>%
-  dplyr::slice_min(objective, n = 1)   # row with lowest RMSE
+  dplyr::slice_min(objective, n = 1)
 
 # Get corresponding parameter-vector
 best_offspring_par <- unlist(
