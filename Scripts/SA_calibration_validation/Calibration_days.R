@@ -6,7 +6,7 @@
 # both C8 and R7.
 #
 # Candidate days are required to have:
-#   - at least 20 hourly air-temperature observations;
+#   - at least 20 hourly air temperature observations;
 #   - at least 12 hourly PAR records with >=10 observations per hour in both
 #     C8 and R7.
 #

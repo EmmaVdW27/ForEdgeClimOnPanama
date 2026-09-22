@@ -48,7 +48,7 @@ start_analysis <- Sys.time()
 # INPUT
 # -----------------
 
-plotnr = "C13" # C8, C13, R7, or R11
+plotnr = "C13" # C13 or R11
 season_string = "C13_calibrated"
 
 params = list(
@@ -91,21 +91,11 @@ if(plotnr == "C13"){
   height_canopy = 33
   scale_factor = 1
   voxel_TLS <- readRDS("Data/TLS_scaled_DTM_and_grid_C13_Panama.rds")
-} else if(plotnr == "R11"){
+} else { # plotnr == "R11"
   plot_map = "R11"
   height_canopy = 35
   scale_factor = 6.20/6.22
   voxel_TLS <- readRDS("Data/TLS_scaled_DTM_and_grid_R11_Panama.rds")
-} else if(plotnr == "C8"){
-  plot_map = "C8"
-  height_canopy = 38
-  scale_factor = 5.81/6.22
-  voxel_TLS <- readRDS("Data/TLS_scaled_DTM_and_grid_C8_Panama.rds")
-} else { # plotnr == "R7"
-  plot_map = "R7"
-  height_canopy = 37
-  scale_factor = 6.19/6.22
-  voxel_TLS <- readRDS("Data/TLS_scaled_DTM_and_grid_R7_Panama.rds")
 }
 
 # -----------------

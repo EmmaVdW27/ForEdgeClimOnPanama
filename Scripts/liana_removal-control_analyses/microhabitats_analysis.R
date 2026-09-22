@@ -1,5 +1,5 @@
 ################################################################################
-# ForEdgeClim 3D thermal microhabitat analysis
+# ForEdgeClim 3D thermal microhabitat (= niche) analysis
 #
 # Quantifies the availability, vertical distribution, and spatial connectivity
 # of thermal microhabitats within the simulated three-dimensional forest
@@ -7,7 +7,7 @@
 #
 # For each plot and timestep, the script:
 #   - runs ForEdgeClim using the plot-specific TLS forest structure;
-#   - calculates the air-temperature anomaly of every 1-m3 voxel relative to
+#   - calculates the air-temperature anomaly of every 1 m3 voxel relative to
 #     the mean temperature of the complete 3D forest volume;
 #   - classifies each voxel into one of five thermal microhabitat classes:
 #     Very cool, Cool, Near-average, Warm, or Very warm;

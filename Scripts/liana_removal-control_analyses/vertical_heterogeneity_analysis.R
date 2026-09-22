@@ -6,9 +6,9 @@
 #
 # For each plot and timestep, the script:
 #   - runs ForEdgeClim using the plot-specific TLS forest structure;
-#   - extracts the simulated 3D air-temperature field;
+#   - extracts the simulated 3D air temperature field;
 #   - calculates spatial temperature heterogeneity separately within each
-#     horizontal 1-m forest layer;
+#     horizontal 1 m forest layer;
 #   - quantifies overall heterogeneity using the standard deviation, interquartile
 #     range, 90% spatial range (P95 - P05), and mean absolute anomaly;
 #   - quantifies fine-scale thermal heterogeneity from the temperature contrast
@@ -171,7 +171,7 @@ params <- list(
 # local contrast = Tair voxel - mean(Tair of its 8 horizontal neighbours)
 #
 # This quantifies fine-scale spatial temperature differentiation within
-# each horizontal 1-m layer.
+# each horizontal 1 m layer.
 
 
 calculate_local_contrast <- function(x, y, temperature) {
@@ -617,7 +617,7 @@ process_datetime <- function(
 
 
     # ======================================================================================
-    # CREATE TEMPORARY 3D AIR-TEMPERATURE GRID
+    # CREATE TEMPORARY 3D AIR TEMPERATURE GRID
     #
     # This exists only in memory for this simulation.
     # Individual voxel values are NOT saved.
@@ -641,7 +641,7 @@ process_datetime <- function(
 
 
     # ======================================================================================
-    # CALCULATE HETEROGENEITY FOR EACH HORIZONTAL 1-M LAYER
+    # CALCULATE HETEROGENEITY FOR EACH HORIZONTAL 1 M LAYER
     # ======================================================================================
 
     heterogeneity <-

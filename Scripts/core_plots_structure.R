@@ -2,7 +2,7 @@
 # Forest structural profile figure
 #
 # Creates vertical forest structural profiles for the four intensively
-# monitored plots in Panama (C8, C13, R7, and R11) from 1-m TLS-derived
+# monitored plots in Panama (C8, C13, R7, and R11) from 1 m TLS-derived
 # structural grids. Voxel density is averaged along the northing (Y) direction
 # to obtain an X-Z cross-sectional representation of forest structure.
 # A smoothed canopy-height profile is overlaid on each structural profile.

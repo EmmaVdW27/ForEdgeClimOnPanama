@@ -555,7 +555,7 @@ temperature_only <- temp_top_parameters
 
 shortwave_only <- sw_top_parameters
 
-# temperatuur: blauw -> groen
+# temperature: blue to green
 temp_cols <- colorRampPalette(
   c(
     "cornflowerblue",
@@ -570,7 +570,7 @@ temp_cols <- colorRampPalette(
 
 names(temp_cols) <- temperature_only
 
-# shortwave: geelgroen -> geel -> oranje
+# shortwave:  yellow to orange
 sw_cols <- colorRampPalette(
   c(    "gold2",
     "orange"
@@ -587,7 +587,7 @@ cols <- c(
   "Other parameters" = "grey80"
 )
 
-# legenda-volgorde behouden
+# keep legend order
 cols <- cols[
   match(
     legend_order,

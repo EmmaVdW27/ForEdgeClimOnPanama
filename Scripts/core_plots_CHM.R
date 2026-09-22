@@ -2,8 +2,8 @@
 # Canopy height and sensor location maps
 #
 # Creates canopy-height maps for the four intensively monitored plots in
-# Panama (C8, C13, R7, and R11) from 1-m TLS-derived structural grids.
-# Air-temperature (TMS) sensor locations are shown for all plots, while PAR
+# Panama (C8, C13, R7, and R11) from 1 m TLS-derived structural grids.
+# Air temperature (TMS) sensor locations are shown for all plots, while PAR
 # sensor locations are additionally shown for C8 and R7. The four maps are
 # combined into a single figure with shared axes and legends.
 #
@@ -201,36 +201,6 @@ create_canopy_height_plot <- function(grid,
 
   return(p)
 }
-
-p1 <- create_canopy_height_plot(
-  tls_C8$grid,
-  "C8",
-  sensor_locations,
-  show_y = TRUE,
-  show_sensor_legend = TRUE
-)
-
-p2 <- create_canopy_height_plot(
-  tls_C13$grid,
-  "C13",
-  sensor_locations
-)
-
-p3 <- create_canopy_height_plot(
-  tls_R7$grid,
-  "R7",
-  sensor_locations,
-  show_x = TRUE,
-  show_y = TRUE
-)
-
-p4 <- create_canopy_height_plot(
-  tls_R11$grid,
-  "R11",
-  sensor_locations,
-  show_x = TRUE
-)
-
 
 
 # ------------------------------------------------------------

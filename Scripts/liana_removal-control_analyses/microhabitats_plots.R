@@ -1,5 +1,5 @@
 ############################################################################################
-# ForEdgeClim - Thermal niche analysis visualisation
+# ForEdgeClim - Thermal microhabitat (= niche) analysis visualisation
 #
 # MAIN FIGURE:
 #   Daytime thermal niche characteristics

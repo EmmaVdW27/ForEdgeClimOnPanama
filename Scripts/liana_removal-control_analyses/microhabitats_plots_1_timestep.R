@@ -1,5 +1,5 @@
 ############################################################################################
-# ForEdgeClim thermal niche visualisation - C8 and R7
+# ForEdgeClim thermal microhabitat (= niche) visualisation - C8 and R7
 #
 # Date/time: 26 April 2023, 19:00 UTC
 #

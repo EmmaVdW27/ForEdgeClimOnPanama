@@ -88,17 +88,7 @@ results_output_file <- file.path(log_dir, paste0("calibration_results_", date_st
 metrics_output_file <- file.path(log_dir, paste0("calibration_metrics_", date_string, ".rds"))
 
 # plot specifics
-if(plotnr == "C13"){
-  plot_map = "C13"
-  height_canopy = 33
-  scale_factor = 1
-  voxel_TLS <- readRDS("Data/TLS_scaled_DTM_and_grid_C13_Panama.rds")
-} else if(plotnr == "R11"){
-  plot_map = "R11"
-  height_canopy = 35
-  scale_factor = 6.20/6.22
-  voxel_TLS <- readRDS("Data/TLS_scaled_DTM_and_grid_R11_Panama.rds")
-} else if(plotnr == "C8"){
+if(plotnr == "C8"){
   plot_map = "C8"
   height_canopy = 38
   scale_factor = 5.81/6.22
@@ -163,7 +153,7 @@ set_params_from_vec <- function(par) {
 
 
 # -----------------
-# PRECOMPUTE & CACHE TOMST OBSERVATIONS
+# PRECOMPUTE & CACHE PAR OBSERVATIONS
 # -----------------
 cat("\nPrecomputing PAR observation files...\n")
 

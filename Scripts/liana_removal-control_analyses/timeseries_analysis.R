@@ -12,7 +12,7 @@
 #     downward shortwave radiation at 1 m height;
 #   - matches simulated air temperature at 1 m height to TOMST sensor locations
 #     using nearest-neighbour matching in the horizontal plane;
-#   - calculates model-observation air-temperature residuals at TOMST locations;
+#   - calculates model-observation air temperature residuals at TOMST locations;
 #   - stores TOMST observations, matched model temperatures, and spatially
 #     averaged model outputs in a combined annual timeseries.
 #
