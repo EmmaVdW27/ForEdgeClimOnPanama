@@ -99,7 +99,8 @@ de_dT_PM <- function(temp, SW_down, net_rad, G) {
   # Effective psychrometric constant
   # ------------------------------------------------------------------
 
-  ga <- g_forest / (rho * Cp)
+  alpha_a = 1 # in m.K/(W.s)
+  ga <- g_forest * alpha_a
 
   gamma_eff <- gamma_psy * (1 + ga / gs_eff)
 

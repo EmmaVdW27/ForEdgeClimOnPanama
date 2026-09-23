@@ -2,7 +2,7 @@
 % Please edit documentation in R/energy_balance.R
 \name{de_dT}
 \alias{de_dT}
-\title{Function to calculate the derivative of the energy balance closure error to surface temperature}
+\title{Function to calculate the derivative of the energy balance closure error to surface temperature with Priestley-Taylor approximation.}
 \usage{
 de_dT(temp, net_rad)
 }
@@ -15,5 +15,5 @@ de_dT(temp, net_rad)
 Derivative of energy balance wrt forest surface temperature
 }
 \description{
-Function to calculate the derivative of the energy balance closure error to surface temperature
+Function to calculate the derivative of the energy balance closure error to surface temperature with Priestley-Taylor approximation.
 }

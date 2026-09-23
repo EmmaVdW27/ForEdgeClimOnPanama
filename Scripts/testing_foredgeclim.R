@@ -18,7 +18,7 @@ start_script = Sys.time()
 # INPUT #
 #########
 
-plotnr <- "C8" # C13, R11, R7, C8, R5, R14, C12 or C16
+plotnr <- "C13" # C13, R11, R7, C8, R5, R14, C12 or C16
 
 # First hour to simulate:
 start_time <- as.POSIXct("2023-04-26 19:00:00", tz = "UTC")
