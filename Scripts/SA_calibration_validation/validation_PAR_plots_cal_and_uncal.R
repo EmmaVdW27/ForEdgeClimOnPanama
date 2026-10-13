@@ -29,7 +29,7 @@ suppressPackageStartupMessages({
 # -----------------
 
 # Set the base plot. The script will also look for "<base>_uncalibrated".
-base_plot <- "R7"   # C8 or R7
+base_plot <- "C8"   # C8 or R7
 
 # Build file map: names = model label, values = plot-string used in filenames
 plot_map <- c(
@@ -122,16 +122,6 @@ temporal_all$model <- factor(
 
 spatial_all$model <- factor(
   spatial_all$model,
-  levels = c("uncalibrated", "calibrated")
-)
-
-temporal_medians$model <- factor(
-  temporal_medians$model,
-  levels = c("uncalibrated", "calibrated")
-)
-
-spatial_medians$model <- factor(
-  spatial_medians$model,
   levels = c("uncalibrated", "calibrated")
 )
 
@@ -304,7 +294,7 @@ temporal_plot <- ggplot(
     fill = scales::alpha("white", 0.8),
     colour = "blue",
     label.size = 0,
-    size = 8,
+    size = 13,
     fontface = "bold"
   )
 
@@ -355,7 +345,7 @@ spatial_plot <- ggplot(
     fill = scales::alpha("white", 0.8),
     colour = "blue",
     label.size = 0,
-    size = 8,
+    size = 13,
     fontface = "bold"
   )
 

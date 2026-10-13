@@ -126,14 +126,14 @@ m_o_time_and_position <- ggplot(val_data_all, aes(x = obs, y = mod)) +
     label.size = 0.6,
     label.r = unit(0.15, "lines"),
     fill = "white", colour = "black",
-    size = 10
+    size = 13
   ) +
   # 1:1 annotation per facet
   geom_text(
     data = one2one_pos,
     aes(x = x_min, y = y_min, label = "1:1"),
     inherit.aes = FALSE,
-    colour = "red", hjust = -2, vjust = -1, fontface = "bold", size = 10
+    colour = "red", hjust = -2, vjust = -1, fontface = "bold", size = 13
   )
 
 #print(m_o_time_and_position)
@@ -182,12 +182,12 @@ hour_residual <- ggplot(val_data_all_h, aes(x = hour_f, y = resid)) +
     data = lab_df,
     aes(x = -Inf, y = Inf, label = lab_resid),
     inherit.aes = FALSE,
-    hjust = -0.1, vjust = 4.3,
+    hjust = -0.1, vjust = 3.3,
     label.size = 0.6,
     label.r = unit(0.15, "lines"),
     fill = "white",
     colour = "black",
-    size = 10
+    size = 13
   )
 
 

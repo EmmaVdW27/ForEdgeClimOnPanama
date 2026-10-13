@@ -96,7 +96,7 @@ create_model_parameters <- function() {
   stomata_closure <<- 0.75 # stomatal closure parameter that controls the sensitivity of stomatal conductance to increasing VPD (kPa-1)
 
   # g(u) parameters
-  k_u <<- 0.7 # wind attenuation coefficient (dimensionless)
+  k_u <<- 0.7 # wind attenuation coefficient (m-1)
   u_ref <<- 1.6 # typical wind speed around forests (above and below canopy) (m/s)
 }
 

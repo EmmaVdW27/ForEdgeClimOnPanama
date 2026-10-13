@@ -712,7 +712,8 @@ p1 <- ggplot(
   geom_col(
     width = 0.60,
     colour = "white",
-    linewidth = 0.3
+    linewidth = 0.3,
+    position = position_stack(reverse = TRUE)
   ) +
 
   facet_grid(

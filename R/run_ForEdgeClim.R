@@ -77,8 +77,8 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
   has_canopy <- ave(den_sorted > 0, xy_id_sorted, FUN = function(x) cumsum(x) > 0)
 
   # Compute wind speed:
-  # - above canopy → u_top_ms
-  # - below canopy → attenuated exponentially based on cumulative LAI
+  # - above canopy: u_top_ms
+  # - below canopy: attenuated exponentially based on cumulative LAI
   # - enforce minimum wind speed of 0.2 m/s
   u_sorted <- ifelse(
     !has_canopy,

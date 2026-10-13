@@ -43,26 +43,12 @@ plots_dtm_struct <- function(dtm, grid, output_path){
     group_by(X, Z) |>
     summarise(mean_density = mean(density, na.rm = TRUE), .groups = 'keep')
 
-  # # background image
-  # img  <- png::readPNG("Output/horizontal_transect_2.png")
-  # img[,,4] <- img[,,4] *0.3 # make transparent
-  # bg_grob <- grid::rasterGrob(img, width = unit(1, "npc"), height = unit(1, "npc"))
-
   # Add light blue sky where mean_density == 0 and don't incorporate them in the legend
   average_density$color <- ifelse(average_density$mean_density == 0, "lightblue", NA)
 
 
   density_plot = ggplot(average_density, aes(x = X, y = Z, fill = mean_density)) +
     geom_tile(aes(fill = ifelse(mean_density == 0, NA, mean_density)), na.rm = TRUE) +
-    # scale_x_continuous(
-    #   breaks = seq(0, 150, by = 50),
-    #   labels = rev(seq(0, 150, by = 50))
-    # ) +
-    # annotation_custom(
-    #   grob = bg_grob,
-    #   xmin = 0, xmax = 140,
-    #   ymin = 0, ymax = 40
-    # ) +
     scale_fill_gradient(
       low = "lightgreen",
       high = "darkgreen",

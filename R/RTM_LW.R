@@ -55,7 +55,7 @@ lw_two_stream <- function(soil_reflect, density, F_sky_lw, temperature, T_soil, 
   S[1, 1] <- (gamma_minus_lw[1] - omega_g*gamma_plus_lw[1])*exp(-lambda_lw[1]*density[1])
   S[1, 2] <- (gamma_plus_lw[1] - omega_g*gamma_minus_lw[1])*exp(lambda_lw[1]*density[1])
 
-  # **Vectorized matrix filling**
+  # Vectorized matrix filling
   indices <- 1:n
   idx_even <- 2 * indices
   idx_odd <- idx_even - 1

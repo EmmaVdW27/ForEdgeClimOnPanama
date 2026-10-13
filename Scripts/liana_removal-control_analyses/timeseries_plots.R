@@ -1612,3 +1612,218 @@ print(
   n = Inf
 )
 
+
+###############################################################################
+# APPENDIX TABLE: ABSOLUTE VALUES + TREATMENT EFFECTS + 95% CI
+###############################################################################
+
+# Absolute seasonal medians for both treatments
+absolute_summary <- comparison %>%
+  mutate(
+    SW_control = Fd_control + Fb_control,
+    SW_removal = Fd_removal + Fb_removal
+  ) %>%
+  group_by(season, period) %>%
+  summarise(
+    obs_control     = median(obs_control, na.rm = TRUE),
+    obs_removal     = median(obs_removal, na.rm = TRUE),
+
+    mod_control     = median(mod_control, na.rm = TRUE),
+    mod_removal     = median(mod_removal, na.rm = TRUE),
+
+    Tsurf_control   = median(Tsurf_control, na.rm = TRUE),
+    Tsurf_removal   = median(Tsurf_removal, na.rm = TRUE),
+
+    LE_control      = median(LE_control, na.rm = TRUE),
+    LE_removal      = median(LE_removal, na.rm = TRUE),
+
+    RH_control      = median(RH_control, na.rm = TRUE),
+    RH_removal      = median(RH_removal, na.rm = TRUE),
+
+    VPD_control     = median(VPD_control, na.rm = TRUE),
+    VPD_removal     = median(VPD_removal, na.rm = TRUE),
+
+    Fd_control      = median(Fd_control, na.rm = TRUE),
+    Fd_removal      = median(Fd_removal, na.rm = TRUE),
+
+    Fb_control      = median(Fb_control, na.rm = TRUE),
+    Fb_removal      = median(Fb_removal, na.rm = TRUE),
+
+    SW_control      = median(SW_control, na.rm = TRUE),
+    SW_removal      = median(SW_removal, na.rm = TRUE),
+
+    .groups = "drop"
+  )
+
+
+# Convert to long format
+absolute_long <- bind_rows(
+
+  absolute_summary %>%
+    transmute(
+      season, period,
+      variable = "delta_obs",
+      control = obs_control,
+      removal = obs_removal
+    ),
+
+  absolute_summary %>%
+    transmute(
+      season, period,
+      variable = "delta_mod",
+      control = mod_control,
+      removal = mod_removal
+    ),
+
+  absolute_summary %>%
+    transmute(
+      season, period,
+      variable = "delta_Tsurf",
+      control = Tsurf_control,
+      removal = Tsurf_removal
+    ),
+
+  absolute_summary %>%
+    transmute(
+      season, period,
+      variable = "delta_LE",
+      control = LE_control,
+      removal = LE_removal
+    ),
+
+  absolute_summary %>%
+    transmute(
+      season, period,
+      variable = "delta_RH",
+      control = RH_control,
+      removal = RH_removal
+    ),
+
+  absolute_summary %>%
+    transmute(
+      season, period,
+      variable = "delta_VPD",
+      control = VPD_control,
+      removal = VPD_removal
+    ),
+
+  absolute_summary %>%
+    transmute(
+      season, period,
+      variable = "delta_Fd",
+      control = Fd_control,
+      removal = Fd_removal
+    ),
+
+  absolute_summary %>%
+    transmute(
+      season, period,
+      variable = "delta_Fb",
+      control = Fb_control,
+      removal = Fb_removal
+    ),
+
+  absolute_summary %>%
+    transmute(
+      season, period,
+      variable = "delta_SW",
+      control = SW_control,
+      removal = SW_removal
+    )
+)
+
+
+# Combine absolute values with treatment effects and bootstrap CIs
+appendix_table <- results_exact_CI %>%
+
+  left_join(
+    absolute_long,
+    by = c(
+      "season",
+      "period",
+      "variable"
+    )
+  ) %>%
+
+  mutate(
+
+    variable_label = recode(
+      variable,
+
+      delta_obs =
+        "Near-surface air temperature (observed)",
+
+      delta_mod =
+        "Near-surface air temperature (modelled)",
+
+      delta_Tsurf =
+        "Forest surface temperature",
+
+      delta_LE =
+        "Latent heat flux",
+
+      delta_RH =
+        "Relative humidity",
+
+      delta_VPD =
+        "Vapour pressure deficit",
+
+      delta_Fd =
+        "Diffuse shortwave radiation",
+
+      delta_Fb =
+        "Direct shortwave radiation",
+
+      delta_SW =
+        "Total shortwave radiation"
+    ),
+
+    unit = recode(
+      variable,
+
+      delta_obs = "°C",
+      delta_mod = "°C",
+      delta_Tsurf = "°C",
+
+      delta_LE = "W m-2",
+      delta_Fd = "W m-2",
+      delta_Fb = "W m-2",
+      delta_SW = "W m-2",
+
+      delta_RH = "%",
+      delta_VPD = "kPa"
+    )
+
+  ) %>%
+
+  select(
+    season,
+    period,
+    variable_label,
+    unit,
+    control,
+    removal,
+    median,
+    CI_low,
+    CI_high
+  ) %>%
+
+  rename(
+    treatment_difference = median
+  )
+
+
+print(
+  appendix_table,
+  n = Inf
+)
+
+
+write.csv(
+  appendix_table,
+  file.path(
+    output_path,
+    "appendix_liana_effect_summary.csv"
+  ),
+  row.names = FALSE
+)
