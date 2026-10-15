@@ -149,10 +149,9 @@ dat <- dat %>%
 
 # Treatment colours
 treatment_colours <- c(
-  "Control"       = "#440154",
+  "Control"       = "chocolate4",
   "Liana removal" = "darkgreen"
 )
-
 
 # Niche colours
 # Same colour scheme as the 3D thermal niche visualisation
@@ -572,11 +571,11 @@ create_availability_plot <- function(selected_period) {
 
   labs(
 
-    x = "Niche availability (% of forest volume)",
+    x = "Microhabitat availability (% of forest volume)",
 
     y = NULL,
 
-    title = "(a) Thermal niche availability"
+    title = "(a) Thermal microhabitat availability"
   ) +
 
     common_theme
@@ -689,7 +688,7 @@ create_vertical_plot <- function(selected_period) {
 
     y = NULL,
 
-    title = "(b) Vertical distribution of thermal niches"
+    title = "(b) Vertical distribution of thermal microhabitats"
   ) +
 
     common_theme
@@ -802,11 +801,11 @@ create_connectivity_plot <- function(selected_period) {
 
   labs(
 
-    x = "Spatial niche connectivity",
+    x = "Spatial microhabitat connectivity",
 
     y = NULL,
 
-    title = "(c) Spatial connectivity of thermal niches"
+    title = "(c) Spatial connectivity of thermal microhabitats"
   ) +
 
     common_theme

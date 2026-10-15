@@ -278,13 +278,13 @@ run_foredgeclim <- function(structure_grid, datetime, trace_idx = NULL) {
     # Use Newton's method to update surface temperature as is done in the SCOPE 2.0 model (Yang et al. 2021)
     #micro_grid$temperature <- micro_grid$temperature - ifelse(energy_balance_surf == 0, 0, W*energy_balance_surf/de_dT(micro_grid$temperature,net_radiation) )
     micro_grid$temperature <- micro_grid$temperature - ifelse(
-                                                          energy_balance_surf == 0,
-                                                          0,
-                                                          W*energy_balance_surf/de_dT_PM(micro_grid$temperature,
-                                                                                             SW_down,
-                                                                                              net_radiation,
-                                                                                              G_voxel)
-                                                       )
+      energy_balance_surf == 0,
+      0,
+      W*energy_balance_surf/de_dT_PM(micro_grid$temperature,
+                                     SW_down,
+                                     net_radiation,
+                                     G_voxel)
+    )
 
     # Determine planes-averaged surface temperature (to be used in T_air_Vec update for zero-density voxels).
     temp <- micro_grid$temperature
